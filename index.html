@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISCO.sj | Risco de chuva e suspensão de aulas | IFSC Câmpus São José</title>
+<meta name="description" content="Painel de apoio à decisão sobre suspensão de aulas por chuva no IFSC Câmpus São José: alertas oficiais, previsão por conjunto de modelos e áreas de risco da Grande Florianópolis.">
+<meta name="author" content="Ramon Mayor Martins">
+<meta name="theme-color" content="#32A041">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%2332A041'/%3E%3Cpath d='M16 5c0 0-8 9.5-8 14a8 8 0 0016 0c0-4.5-8-14-8-14z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --verde:#32A041; --verde-tinta:#1D7A2D; --verde-claro:#EAF5EC; --verde-meio:#CFE8D4;
+  --vermelho:#C8191E; --cinza:#939598;
+  --tinta:#000; --tinta-2:#4D5155; --tinta-3:#6E7276;
+  --linha:#D8DBDC; --linha-forte:#B9BDBF; --papel:#FFFFFF; --suave:#F7F8F7;
+  --chuva-passada:#86B6EF; --chuva:#2A78D6; --chuva-escura:#1C5CAB; --chuva-clara:#B7D3F6;
+  --n0:#32A041; --n0-bg:#EAF5EC; --n0-tx:#1D7A2D;
+  --n1:#E2AE00; --n1-bg:#FFF6D6; --n1-tx:#6E5100;
+  --n2:#E0702A; --n2-bg:#FDEADC; --n2-tx:#8F3E0E;
+  --n3:#C8191E; --n3-bg:#FBE3E3; --n3-tx:#A3141A;
+  --n4:#8E0F13; --n4-bg:#F5CFD0; --n4-tx:#7E0D11;
+  --raio:3px;
+  --fonte:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--fonte);font-size:15px;line-height:1.5;color:var(--tinta);background:var(--papel)}
+a{color:var(--verde-tinta);text-underline-offset:2px}
+a:hover{color:var(--tinta)}
+:focus-visible{outline:3px solid var(--verde);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+[hidden]{display:none!important}
+
+/* faixa institucional */
+.faixa{background:var(--verde-claro);border-top:4px solid var(--verde);font-size:13px;color:var(--verde-tinta)}
+.faixa .wrap{display:flex;justify-content:space-between;gap:8px 20px;padding-top:6px;padding-bottom:6px;flex-wrap:wrap}
+.faixa nav{display:flex;gap:16px;flex-wrap:wrap}
+.faixa a{color:var(--verde-tinta);text-decoration:none}
+.faixa a:hover{text-decoration:underline}
+
+/* topo */
+.topo{border-bottom:1px solid var(--linha)}
+.topo .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;padding-top:24px;padding-bottom:18px}
+h1{font-size:40px;line-height:1.05;margin:0;font-weight:700;letter-spacing:-0.015em}
+.assin{margin:8px 0 0;font-size:14px;color:var(--tinta-2)}
+.assin a{color:var(--tinta-2);text-decoration:none;border-bottom:1px solid var(--linha-forte)}
+.assin a:hover{color:var(--verde-tinta);border-bottom-color:var(--verde)}
+.assin svg{width:14px;height:14px;vertical-align:-2px;fill:currentColor;margin-right:3px}
+.lede{margin:12px 0 0;max-width:70ch;color:var(--tinta-2)}
+.estado{text-align:right;font-size:13px;color:var(--tinta-2);display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.estado p{margin:0}
+.fontes{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:flex-end;max-width:520px}
+.fonte::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cinza);margin-right:6px;vertical-align:1px}
+.fonte.ok::before{background:var(--verde)}
+.fonte.erro::before{background:var(--vermelho)}
+.fonte.man::before{background:var(--n1)}
+
+/* botões e campos */
+.btn{font:inherit;font-size:14px;font-weight:700;border:1px solid var(--verde-tinta);background:var(--verde-tinta);color:#fff;padding:8px 14px;border-radius:var(--raio);cursor:pointer;line-height:1.2}
+.btn:hover{background:#155E22}
+.btn.sec{background:#fff;color:var(--verde-tinta)}
+.btn.sec:hover{background:var(--verde-claro)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{font:inherit;font-size:14px;color:var(--tinta);border:1px solid var(--linha-forte);border-radius:var(--raio);padding:7px 9px;background:#fff;min-width:0}
+input[type=range]{padding:0;border:0;accent-color:var(--verde-tinta)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--verde-tinta);vertical-align:-3px}
+textarea{width:100%;resize:vertical;line-height:1.45}
+label.campo{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--tinta-2)}
+label.campo small{color:var(--tinta-3)}
+.campos{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 20px}
+
+/* aviso de modo */
+.aviso-modo{background:var(--n1-bg);border:1px solid var(--n1);color:var(--n1-tx);padding:9px 14px;margin-top:16px;border-radius:var(--raio)}
+
+/* veredito */
+.veredito{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);background:var(--suave);border:1px solid var(--linha);border-left:12px solid var(--cinza);margin:20px 0 8px}
+.veredito[data-n="0"]{border-left-color:var(--n0);background:var(--n0-bg)}
+.veredito[data-n="1"]{border-left-color:var(--n1);background:var(--n1-bg)}
+.veredito[data-n="2"]{border-left-color:var(--n2);background:var(--n2-bg)}
+.veredito[data-n="3"]{border-left-color:var(--n3);background:var(--n3-bg)}
+.veredito[data-n="4"]{border-left-color:var(--n4);background:var(--n4-bg)}
+.v-main{padding:22px 26px 20px}
+.v-quando{margin:0;font-size:15px;color:var(--tinta-2)}
+.v-decisao{margin:6px 0 10px;font-size:46px;line-height:1.04;font-weight:700;display:flex;align-items:center;gap:14px;letter-spacing:-0.01em}
+.veredito[data-n="0"] .v-decisao{color:var(--n0-tx)}
+.veredito[data-n="1"] .v-decisao{color:var(--n1-tx)}
+.veredito[data-n="2"] .v-decisao{color:var(--n2-tx)}
+.veredito[data-n="3"] .v-decisao{color:var(--n3-tx)}
+.veredito[data-n="4"] .v-decisao{color:var(--n4-tx)}
+.v-ico svg{width:42px;height:42px;display:block}
+.v-porque{margin:0 0 16px;max-width:66ch}
+.v-num{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 18px;margin:0;border-top:1px solid rgba(0,0,0,.14);padding-top:14px}
+.v-num dt{font-size:13px;color:var(--tinta-2)}
+.v-num dd{margin:0;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25}
+.v-num dd small{font-size:13px;font-weight:400;color:var(--tinta-2)}
+.v-grade{border-left:1px solid rgba(0,0,0,.12);padding:18px 20px;background:rgba(255,255,255,.72)}
+.v-grade-tit{margin:0 0 10px;font-weight:700}
+.v-grade-tit span{font-weight:400;color:var(--tinta-2);font-size:13px}
+.grade{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:6px}
+.grade .rot{font-size:13px;color:var(--tinta-2);align-self:center;padding-right:4px}
+.grade .col{font-size:13px;color:var(--tinta-2)}
+.celula{appearance:none;font:inherit;text-align:left;padding:8px 10px;min-height:60px;border-radius:var(--raio);cursor:pointer;border:1px solid var(--linha);border-left:5px solid var(--cinza);background:#fff;color:var(--tinta)}
+.celula b{display:block;font-size:14px;line-height:1.2}
+.celula span{display:block;font-size:12px;color:var(--tinta-2);margin-top:3px;font-variant-numeric:tabular-nums}
+.celula[data-n="0"]{border-left-color:var(--n0)} .celula[data-n="0"] b{color:var(--n0-tx)}
+.celula[data-n="1"]{border-left-color:var(--n1)} .celula[data-n="1"] b{color:var(--n1-tx)}
+.celula[data-n="2"]{border-left-color:var(--n2)} .celula[data-n="2"] b{color:var(--n2-tx)}
+.celula[data-n="3"]{border-left-color:var(--n3)} .celula[data-n="3"] b{color:var(--n3-tx)}
+.celula[data-n="4"]{border-left-color:var(--n4);background:var(--n4-bg)} .celula[data-n="4"] b{color:var(--n4-tx)}
+.celula[aria-pressed="true"]{outline:2px solid var(--tinta);outline-offset:-1px}
+.celula.passou{opacity:.55}
+.nota{font-size:13px;color:var(--tinta-2);margin:10px 0 0}
+.nota.erro{color:var(--n3-tx)}
+
+/* seções */
+.secao{margin:30px 0}
+.secao>h2,.h2{font-size:20px;line-height:1.25;margin:0 0 2px;padding-top:12px;border-top:2px solid var(--tinta)}
+.secao h3{font-size:16px;margin:0 0 6px}
+.sub{margin:0 0 14px;color:var(--tinta-2);font-size:14px;max-width:78ch}
+.dupla{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:28px;align-items:start}
+.dupla>.secao{margin-top:22px}
+#mapa{height:540px;border:1px solid var(--linha);background:#EEF0EE}
+.mapa-erro{padding:20px;color:var(--tinta-2)}
+
+/* fatores */
+.fator{display:grid;grid-template-columns:minmax(0,10.5rem) minmax(0,1fr) 2.6rem;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha)}
+.fator .nome{font-size:14px;line-height:1.25}
+.fator .nome small{display:block;font-size:12px;color:var(--tinta-2)}
+.barra{height:8px;background:#ECEEED;border-radius:2px;overflow:hidden}
+.barra i{display:block;height:100%;background:var(--verde-tinta);border-radius:0 2px 2px 0}
+.fator .pts{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.fator.total{border-bottom:0;font-weight:700}
+.fator.total .pts{font-size:18px}
+.fator.total small{font-weight:400}
+@media (min-width:1021px){.dupla>.secao:first-child{position:sticky;top:12px}}
+
+/* alertas */
+.bloco-alerta{border-bottom:1px solid var(--linha);padding:12px 0}
+.bloco-alerta:last-child{border-bottom:0}
+.bloco-alerta .cab{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.bloco-alerta .cab b{font-size:14px}
+.bloco-alerta select{max-width:210px}
+.avisos{list-style:none;margin:8px 0 0;padding:0}
+.avisos li{margin:0 0 8px;font-size:14px}
+.avisos small{color:var(--tinta-2)}
+.sev{display:inline-block;font-size:12px;font-weight:700;padding:1px 7px;border-radius:2px;margin-right:4px;border:1px solid}
+.sev.s1{background:var(--n1-bg);border-color:var(--n1);color:var(--n1-tx)}
+.sev.s2{background:var(--n2-bg);border-color:var(--n2);color:var(--n2-tx)}
+.sev.s3{background:var(--n3-bg);border-color:var(--n3);color:var(--n3-tx)}
+.sev.d1{background:#F1F2F2;border-color:#939598;color:#3F4245}
+.sev.d2{background:var(--n1-bg);border-color:var(--n1);color:var(--n1-tx)}
+.sev.d3{background:var(--n2-bg);border-color:var(--n2);color:var(--n2-tx)}
+.sev.d4{background:var(--n3-bg);border-color:var(--n3);color:var(--n3-tx)}
+.sev.d5{background:var(--n4-bg);border-color:var(--n4);color:var(--n4-tx)}
+.mk-pluv{width:11px;height:11px;border:1.5px solid #fff;box-shadow:0 0 0 1px #000}
+
+/* gráficos */
+.grafico{position:relative;width:100%;min-height:60px}
+.grafico>svg{display:block;max-width:100%;height:auto}
+.g-eixo{font-size:11px;fill:var(--tinta-3);font-family:var(--fonte)}
+.g-rot{font-size:11px;fill:var(--verde-tinta);font-weight:700;font-family:var(--fonte)}
+.g-ref{font-size:11px;fill:var(--tinta-2);font-family:var(--fonte)}
+.tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--linha-forte);padding:6px 9px;font-size:12px;line-height:1.4;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.14);display:none;white-space:nowrap;z-index:5}
+.linha-ctl{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.linha-ctl label{font-size:13px;color:var(--tinta-2);display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.vazio{color:var(--tinta-2);font-size:14px;padding:18px 0}
+
+/* métodos */
+.metodos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--linha)}
+.metodo{padding:16px 22px 18px;border-right:1px solid var(--linha)}
+.metodo:first-child{padding-left:0}
+.metodo:last-child{border-right:0;padding-right:0}
+.metodo .res{font-size:22px;font-weight:700;margin:2px 0 8px;line-height:1.2}
+.metodo p{margin:0 0 8px;font-size:14px}
+.escala{position:relative;display:flex;height:14px;margin:30px 0 4px}
+.escala .seg{height:100%;border-top:4px solid}
+.escala .marc{position:absolute;top:-8px;width:3px;height:30px;background:var(--tinta);transform:translateX(-1.5px)}
+.escala .marc span{position:absolute;bottom:31px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;white-space:nowrap}
+.escala .lim{position:absolute;top:-4px;height:22px;border-left:2px dashed var(--tinta-2)}
+.escala-rot{display:flex;font-size:11px;color:var(--tinta-2);margin-bottom:10px}
+.escala-rot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:2px}
+.regras{list-style:none;padding:0;margin:6px 0 0;font-size:13px}
+.regras li{display:grid;grid-template-columns:minmax(0,1fr) 3.4rem;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--linha)}
+.regras .barra{height:6px}
+.regras .barra i{background:var(--tinta-2)}
+.consenso{margin:14px 0 0;padding:12px 14px;background:var(--suave);border-left:4px solid var(--verde-tinta);font-size:14px}
+.ia-llm{margin-top:18px;padding-top:14px;border-top:1px solid var(--linha)}
+.ia-llm .acoes{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.llm-out{white-space:pre-wrap;font-size:14px;background:var(--suave);border:1px solid var(--linha);padding:12px 14px;margin-top:8px;max-height:460px;overflow:auto}
+.llm-out:empty{display:none}
+
+/* comunicado e registro */
+.dupla-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+.dupla-2>div>h2{font-size:20px;margin:0 0 2px;padding-top:12px;border-top:2px solid var(--tinta)}
+.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.reg-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;margin-bottom:12px}
+#log,.rolagem{overflow-x:auto}
+table.log{width:100%;border-collapse:collapse;font-size:13px}
+table.log th,table.log td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--linha);vertical-align:top}
+table.log th{color:var(--tinta-2);font-weight:500}
+table.log td.num{font-variant-numeric:tabular-nums}
+
+/* configuração */
+details.cfg{margin:30px 0;border-top:2px solid var(--tinta)}
+details.cfg>summary{cursor:pointer;font-size:20px;font-weight:700;padding:12px 0;list-style:none}
+details.cfg>summary::-webkit-details-marker{display:none}
+details.cfg>summary::before{content:"+";display:inline-block;width:1.1em;color:var(--verde-tinta)}
+details.cfg[open]>summary::before{content:"\2212"}
+fieldset{border:0;border-top:1px solid var(--linha);margin:0 0 6px;padding:14px 0 18px;min-width:0}
+legend{font-weight:700;font-size:15px;padding:0 8px 0 0}
+fieldset>p{margin:0 0 12px;font-size:14px;color:var(--tinta-2);max-width:80ch}
+table.origens{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+table.origens th{font-weight:500;color:var(--tinta-2);text-align:left;padding:4px 6px;font-size:13px}
+table.origens td{padding:3px 6px}
+table.origens input{width:100%}
+.sim-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px 22px;margin-top:12px}
+.sim-grade output{font-weight:700;font-variant-numeric:tabular-nums;color:var(--tinta)}
+.metodologia{max-width:82ch}
+.metodologia h3{font-size:16px;margin:20px 0 6px}
+.metodologia p,.metodologia li{font-size:14px}
+.metodologia code{font-size:13px;background:var(--suave);padding:1px 4px;border-radius:2px}
+
+/* mapa: marcadores e legenda */
+.mk-campus{width:18px;height:18px;background:var(--verde);border:2px solid #fff;box-shadow:0 0 0 1.5px #000}
+.mk-rot{position:absolute;left:22px;top:-1px;font-size:12px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.85);padding:0 4px;border-radius:2px}
+.mk-area svg{width:20px;height:20px;display:block;overflow:visible}
+.legenda{background:#fff;padding:6px 10px;border:1px solid var(--linha-forte);font-size:12px;line-height:1.5;font-family:var(--fonte);max-width:230px}
+.legenda summary{cursor:pointer;font-weight:700;list-style:none}
+.legenda summary::-webkit-details-marker{display:none}
+.legenda summary::after{content:" +";color:var(--verde-tinta)}
+.legenda details[open] summary::after{content:" \2212"}
+.legenda details[open] summary{margin-bottom:4px}
+.legenda b{display:block;margin-bottom:2px}
+.legenda i{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.4)}
+.legenda svg{width:12px;height:12px;vertical-align:-1px;margin-right:6px}
+.leaflet-container{font-family:var(--fonte)}
+.leaflet-popup-content{font-size:13px;line-height:1.45;margin:10px 12px}
+.leaflet-popup-content b{font-size:14px}
+
+/* rodapé */
+.rodape{border-top:4px solid var(--verde);background:var(--verde-claro);margin-top:40px;font-size:13px;color:var(--tinta-2)}
+.rodape .wrap{padding-top:18px;padding-bottom:22px}
+.rodape p{margin:0 0 6px;max-width:100ch}
+.rodape b{color:var(--tinta)}
+
+@media (max-width:1020px){
+  .veredito{grid-template-columns:1fr}
+  .v-grade{border-left:0;border-top:1px solid rgba(0,0,0,.12)}
+  .dupla,.dupla-2{grid-template-columns:minmax(0,1fr)}
+  .metodos{grid-template-columns:minmax(0,1fr)}
+  .metodo,.metodo:first-child,.metodo:last-child{border-right:0;padding:16px 0;border-bottom:1px solid var(--linha)}
+  .topo .wrap{grid-template-columns:1fr}
+  .estado{text-align:left;align-items:flex-start}
+  .fontes{justify-content:flex-start}
+}
+@media (max-width:640px){
+  .wrap{padding:0 14px}
+  h1{font-size:32px}
+  .v-main{padding:18px 16px}
+  .v-decisao{font-size:32px}
+  .v-ico svg{width:32px;height:32px}
+  .v-num{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #mapa{height:400px}
+  .fator{grid-template-columns:minmax(0,8.5rem) minmax(0,1fr) 2.4rem}
+  .reg-form{grid-template-columns:1fr}
+  .grade{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grade>span:first-child{display:none}
+  .grade .rot{grid-column:1/-1;padding-top:4px}
+  .celula{padding:7px 8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media print{
+  .faixa nav,.estado button,details.cfg,#mapa,.nao-imprimir,.ia-llm .acoes,.linha-ctl label{display:none!important}
+  .veredito,.metodo,.fator{break-inside:avoid}
+  .rodape{background:#fff}
+  a{color:var(--tinta)}
+}
+</style>
+</head>
+<body>
+
+<div class="faixa">
+  <div class="wrap">
+    <span>Instituto Federal de Santa Catarina, Câmpus São José</span>
+    <nav aria-label="Fontes oficiais">
+      <a href="https://www.defesacivil.sc.gov.br/" target="_blank" rel="noopener">Defesa Civil SC</a>
+      <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">Avisos do INMET</a>
+      <a href="https://painelalertas.cemaden.gov.br/" target="_blank" rel="noopener">Painel do CEMADEN</a>
+    </nav>
+  </div>
+</div>
+
+<header class="topo">
+  <div class="wrap">
+    <div>
+      <h1>RISCO.sj</h1>
+      <p class="assin">Author <a href="https://rmayormartins.github.io" target="_blank" rel="noopener">Ramon Mayor Martins, Ph.D.</a> // <a href="https://github.com/rmayormartins" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>@rmayormartins</a> // <a href="https://www.ifsc.edu.br/web/campus-sao-jose" target="_blank" rel="noopener">IFSC SJ</a> - <a href="https://wiki.sj.ifsc.edu.br" target="_blank" rel="noopener">Área de Telecomunicações</a></p>
+      <p class="lede">Risco de chuva e apoio à decisão sobre suspensão de aulas no IFSC Câmpus São José. O painel cruza alertas oficiais, previsão de vários modelos meteorológicos e áreas de risco da Grande Florianópolis, turno a turno.</p>
+    </div>
+    <div class="estado">
+      <p id="atualizado">Buscando dados</p>
+      <div class="fontes" id="fontes" aria-live="polite"></div>
+      <button type="button" class="btn sec" id="btn-atualizar">Atualizar dados</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="aviso-modo" class="aviso-modo" hidden></div>
+
+  <section id="veredito" class="veredito" aria-live="polite" aria-label="Recomendação para o turno selecionado">
+    <div class="v-main">
+      <p id="v-quando" class="v-quando"></p>
+      <p id="v-decisao" class="v-decisao">Carregando previsão</p>
+      <p id="v-porque" class="v-porque"></p>
+      <dl id="v-num" class="v-num"></dl>
+    </div>
+    <div class="v-grade">
+      <p class="v-grade-tit">Recomendação por turno <span>(selecione para ver os detalhes)</span></p>
+      <div id="grade" class="grade"></div>
+      <p class="nota">A janela de cada turno inclui o tempo de deslocamento antes do início das aulas.</p>
+    </div>
+  </section>
+
+  <div class="dupla">
+    <section class="secao" aria-labelledby="t-mapa">
+      <h2 id="t-mapa">Mapa de risco</h2>
+      <p class="sub">Áreas de risco coloridas pela ativação estimada para o turno selecionado. Círculos são os municípios de origem dos estudantes, com tamanho proporcional à parcela de cada um.</p>
+      <div id="mapa" role="region" aria-label="Mapa de risco da Grande Florianópolis"></div>
+      <p class="nota" id="nota-areas"></p>
+    </section>
+
+    <aside class="secao" aria-labelledby="t-fatores">
+      <h2 id="t-fatores">Composição do índice</h2>
+      <p class="sub" id="fatores-sub">Quanto cada fator contribui para o índice do turno selecionado, em pontos de 0 a 100.</p>
+      <div id="fatores"></div>
+
+      <h2 class="h2" style="margin-top:26px">Alertas oficiais</h2>
+      <p class="sub">Os alertas da Defesa Civil chegam pelo IDAP, o mesmo canal do SMS 40199 e do Defesa Civil Alerta. Os avisos do INMET e a chuva dos pluviômetros do CEMADEN também são coletados a cada 10 minutos. Use o ajuste manual só quando souber de algo que ainda não apareceu aqui.</p>
+      <div class="bloco-alerta">
+        <div class="cab">
+          <b>Defesa Civil</b>
+          <select data-cfg="manual.dc" aria-label="Alerta da Defesa Civil">
+            <option value="-1">Automático (IDAP)</option><option value="0">Nenhum (manual)</option><option value="1">Baixo (manual)</option><option value="2">Moderado (manual)</option><option value="3">Alto (manual)</option><option value="4">Severo (manual)</option><option value="5">Extremo (manual)</option>
+          </select>
+        </div>
+        <div id="lista-dc"></div>
+        <div class="campos" id="dc-manual-extra" style="margin-top:8px;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)">
+          <label class="campo">Vale para
+            <select data-cfg="manual.dcValidade"><option value="hoje">Somente hoje</option><option value="amanha">Hoje e amanhã</option></select>
+          </label>
+          <label class="campo">Observação (opcional)
+            <input type="text" data-cfg="manual.dcNota" placeholder="Ex.: alerta 412, risco de deslizamento">
+          </label>
+        </div>
+      </div>
+      <div class="bloco-alerta">
+        <div class="cab">
+          <b>INMET</b>
+          <select data-cfg="manual.inmet" aria-label="Aviso do INMET">
+            <option value="-1">Consulta automática</option><option value="0">Nenhum (manual)</option><option value="1">Amarelo (manual)</option><option value="2">Laranja (manual)</option><option value="3">Vermelho (manual)</option>
+          </select>
+        </div>
+        <div id="lista-inmet"></div>
+      </div>
+      <div class="bloco-alerta">
+        <div class="cab">
+          <b>CEMADEN</b>
+          <select data-cfg="manual.cemaden" aria-label="Alerta do CEMADEN">
+            <option value="0">Nenhum alerta informado</option><option value="1">Moderado (manual)</option><option value="2">Alto (manual)</option><option value="3">Muito alto (manual)</option>
+          </select>
+        </div>
+        <div id="lista-cem"></div>
+        <div class="acoes" style="margin-top:8px;align-items:center">
+          <label class="btn sec" style="display:inline-block">Importar CSV de pluviômetros<input type="file" id="arq-pluv" accept=".csv,.txt" hidden></label>
+          <select id="pluv-fuso" aria-label="Horário do arquivo"><option value="utc">Horário UTC (padrão do CEMADEN)</option><option value="br">Horário de Brasília</option></select>
+        </div>
+        <p class="nota" style="margin-top:6px">Reserva para quando a coleta automática falhar: baixe os dados das últimas 72 h no <a href="https://mapainterativo.cemaden.gov.br/" target="_blank" rel="noopener">Mapa Interativo do CEMADEN</a> e importe aqui.</p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="secao" aria-labelledby="t-chuva">
+    <h2 id="t-chuva">Chuva hora a hora</h2>
+    <div class="linha-ctl">
+      <p class="sub">72 horas anteriores (estimativa do modelo, não é medição de pluviômetro) e 48 horas seguintes (previsão). As faixas verdes marcam os turnos; a de contorno escuro é o turno selecionado.</p>
+      <label>Município <select id="g-origem"></select></label>
+    </div>
+    <div id="g-chuva" class="grafico"></div>
+  </section>
+
+  <section class="secao" aria-labelledby="t-ens">
+    <h2 id="t-ens">Probabilidade pelo conjunto de modelos</h2>
+    <p class="sub" id="ens-txt"></p>
+    <div id="g-ens" class="grafico"></div>
+  </section>
+
+  <section class="secao" aria-labelledby="t-metodos">
+    <h2 id="t-metodos">Três formas de decidir</h2>
+    <p class="sub">Cada método olha os mesmos dados de um jeito diferente. A recomendação final combina os três e nunca fica abaixo do que o alerta oficial indica.</p>
+    <div class="metodos" id="metodos"></div>
+    <p id="consenso" class="consenso"></p>
+    <div class="ia-llm">
+      <h3>Parecer por modelo de linguagem</h3>
+      <p class="sub" style="margin-bottom:0">Opcional. Envia o resumo numérico do turno a um modelo de linguagem pelo Worker configurado e devolve um parecer em texto. Sem Worker, copie o prompt e cole no assistente de sua preferência.</p>
+      <div class="acoes">
+        <button type="button" class="btn" id="btn-llm">Gerar parecer</button>
+        <button type="button" class="btn sec" id="btn-prompt">Copiar prompt</button>
+      </div>
+      <div id="llm-out" class="llm-out" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="secao dupla-2">
+    <div>
+      <h2>Comunicado</h2>
+      <p class="sub">Rascunho gerado a partir da recomendação do turno selecionado. Revise antes de publicar.</p>
+      <textarea id="comunicado" rows="12" aria-label="Rascunho do comunicado"></textarea>
+      <div class="acoes">
+        <button type="button" class="btn" id="btn-copiar-com">Copiar texto</button>
+        <button type="button" class="btn sec" id="btn-imprimir">Imprimir relatório</button>
+      </div>
+    </div>
+    <div>
+      <h2>Registro de decisões</h2>
+      <p class="sub">Guarde a decisão tomada pela Direção. O histórico fica neste navegador e pode ser exportado para calibrar o modelo com casos reais.</p>
+      <div class="reg-form">
+        <label class="campo">Decisão tomada
+          <select id="reg-decisao"></select>
+        </label>
+        <label class="campo">Observação
+          <input type="text" id="reg-obs" placeholder="Ex.: houve alagamento na BR-101">
+        </label>
+      </div>
+      <div class="acoes" style="margin-top:0;margin-bottom:12px">
+        <button type="button" class="btn" id="btn-registrar">Registrar decisão</button>
+        <button type="button" class="btn sec" id="btn-csv">Exportar CSV</button>
+        <button type="button" class="btn sec" id="btn-limpar-log">Limpar histórico</button>
+      </div>
+      <div id="log"></div>
+    </div>
+  </section>
+
+  <details class="cfg" id="config">
+    <summary>Configuração</summary>
+
+    <fieldset>
+      <legend>Simulação de cenário</legend>
+      <p>Substitui a previsão por valores fixos para testar o comportamento do índice. Nada é salvo e os dados reais voltam ao desligar.</p>
+      <label><input type="checkbox" id="sim-on"> Ativar simulação</label>
+      <div class="sim-grade" id="sim-grade"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Municípios de origem dos estudantes</legend>
+      <p>Pontos onde a previsão é consultada. A parcela pondera o índice regional; os valores iniciais são estimativas e devem ser ajustados com dados da Secretaria Acadêmica. A primeira linha é o câmpus.</p>
+      <div class="rolagem"><table class="origens"><thead><tr><th>Município</th><th>Latitude</th><th>Longitude</th><th>Parcela (%)</th><th>Código IBGE</th><th></th></tr></thead><tbody id="origens-corpo"></tbody></table></div>
+      <div class="acoes"><button type="button" class="btn sec" id="btn-add-origem">Adicionar município</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Turnos e deslocamento</legend>
+      <div class="campos" id="campos-turnos"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Pesos do índice</legend>
+      <p>Os pesos dos cinco fatores de perigo são normalizados para somar 1. O peso da exposição (áreas de risco ativadas) é aplicado à parte.</p>
+      <div class="campos">
+        <label class="campo">Intensidade máxima <input type="number" min="0" step="1" data-cfg="pesos.intensidade"></label>
+        <label class="campo">Acumulado na janela <input type="number" min="0" step="1" data-cfg="pesos.acumulado"></label>
+        <label class="campo">Chuva antecedente <input type="number" min="0" step="1" data-cfg="pesos.antecedente"></label>
+        <label class="campo">Rajadas de vento <input type="number" min="0" step="1" data-cfg="pesos.vento"></label>
+        <label class="campo">Alertas oficiais <input type="number" min="0" step="1" data-cfg="pesos.alerta"></label>
+        <label class="campo">Exposição (%) <input type="number" min="0" max="60" step="1" data-cfg="pesoExposicao"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Limiares de perigo</legend>
+      <p>Cada fator vira um valor entre 0 e 1 por interpolação linear entre pontos <code>valor:nível</code>. Os padrões seguem os critérios de aviso do INMET para chuva (20, 30 e 60 mm/h) e vento (40, 60 e 100 km/h). O acumulado é medido na janela do turno, de 6 h antes do deslocamento até o fim das aulas (12 a 17 h), por isso seus pontos ficam um pouco abaixo dos 50 e 100 mm/dia do INMET.</p>
+      <div class="campos">
+        <label class="campo">Intensidade (mm/h) <input type="text" data-cfg="limiares.intensidade" data-tipo="ancoras"></label>
+        <label class="campo">Acumulado na janela (mm) <input type="text" data-cfg="limiares.acumulado" data-tipo="ancoras"></label>
+        <label class="campo">Antecedente 72 h (mm) <input type="text" data-cfg="limiares.antecedente" data-tipo="ancoras"></label>
+        <label class="campo">Rajadas (km/h) <input type="text" data-cfg="limiares.vento" data-tipo="ancoras"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Probabilidade e decisão</legend>
+      <div class="campos">
+        <label class="campo">Limiar do acumulado na janela, ensemble (mm) <input type="number" min="5" step="1" data-cfg="ensemble.acumuladoMM"></label>
+        <label class="campo">Limiar de 3 h no ensemble (mm) <input type="number" min="5" step="1" data-cfg="ensemble.tresHorasMM"></label>
+        <label class="campo">Modelos do ensemble <input type="text" data-cfg="ensemble.modelos"><small>Separados por vírgula, nomes da API Open-Meteo</small></label>
+        <label class="campo">Razão custo-perda C/L <input type="number" min="0.05" max="0.95" step="0.05" data-cfg="custoPerda"><small>Suspender quando a probabilidade passa deste valor</small></label>
+        <label class="campo">Probabilidade por nível, Defesa Civil <input type="text" data-cfg="probAlerta.dc" data-tipo="lista"><small>Nenhum, baixo, moderado, alto, severo, extremo</small></label>
+        <label class="campo">Probabilidade por nível, INMET <input type="text" data-cfg="probAlerta.inmet" data-tipo="lista"><small>Nenhum, amarelo, laranja, vermelho</small></label>
+        <label class="campo">Probabilidade por nível, CEMADEN <input type="text" data-cfg="probAlerta.cemaden" data-tipo="lista"><small>Nenhum, moderado, alto, muito alto</small></label>
+        <label class="campo">Como combinar os três métodos
+          <select data-cfg="consolidacao"><option value="mediana">Mediana (equilibrado)</option><option value="max">Máximo (mais cauteloso)</option></select>
+        </label>
+        <label class="campo" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" data-cfg="respeitarPiso"> Alerta oficial define um piso para a recomendação</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Áreas de risco</legend>
+      <p>Para uso oficial, importe a setorização de áreas de risco do Serviço Geológico do Brasil (SGB) dos municípios da região, em GeoJSON (WGS 84) ou KML. O tipo (deslizamento ou inundação) e o grau (alto ou muito alto) são lidos dos atributos quando existirem.</p>
+      <div class="acoes" style="margin-top:0">
+        <label class="btn sec" style="display:inline-block">Importar GeoJSON ou KML<input type="file" id="arq-areas" accept=".geojson,.json,.kml" hidden></label>
+        <button type="button" class="btn sec" id="btn-areas-base">Voltar à base inicial</button>
+      </div>
+      <p class="nota" id="areas-info"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Integrações</legend>
+      <div class="campos">
+        <label class="campo">URL do Worker (opcional) <input type="url" data-cfg="workerURL" placeholder="https://risco-sj.seu-usuario.workers.dev"><small>Contorna bloqueios de CORS do INMET e do CEMADEN e habilita o parecer por modelo de linguagem</small></label>
+        <label class="campo" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" data-cfg="usarPluviometros"> Usar a chuva medida nos pluviômetros do CEMADEN</label>
+        <label class="campo">Chave da CARTO Basemaps (opcional) <input type="text" data-cfg="cartoKey" placeholder="sua chave"><small>Sem chave, o mapa usa a base cinza da Esri</small></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Arquivo de configuração</legend>
+      <div class="acoes" style="margin-top:0">
+        <button type="button" class="btn sec" id="btn-exp-cfg">Exportar configuração</button>
+        <label class="btn sec" style="display:inline-block">Importar configuração<input type="file" id="arq-cfg" accept=".json" hidden></label>
+        <button type="button" class="btn sec" id="btn-reset-cfg">Restaurar padrões</button>
+      </div>
+    </fieldset>
+  </details>
+
+  <details class="cfg" id="metodologia">
+    <summary>Metodologia e limitações</summary>
+    <div class="metodologia">
+      <h3>Dados</h3>
+      <ul>
+        <li><b>Previsão determinística</b>: Open-Meteo (combinação de modelos), por hora, para cada município de origem: chuva, probabilidade de chuva e rajadas. As 72 horas anteriores vêm do próprio modelo e não substituem pluviômetros.</li>
+        <li><b>Ensemble</b>: Open-Meteo Ensemble API, com os membros dos modelos ICON, GFS e ECMWF para o ponto do câmpus.</li>
+        <li><b>Coletor automático</b>: um script no GitHub Actions consulta as fontes oficiais a cada 10 minutos e grava <code>dados/alertas.json</code>, lido pelo painel. Assim o navegador não esbarra em bloqueios de CORS e o feed nacional do IDAP, que tem vários megabytes, não precisa ser baixado no celular.</li>
+        <li><b>INMET</b>: avisos meteorológicos ativos. Critérios para chuva: amarelo (perigo potencial) de 20 a 30 mm/h ou até 50 mm/dia; laranja (perigo) de 30 a 60 mm/h ou de 50 a 100 mm/dia; vermelho (grande perigo) acima de 60 mm/h ou de 100 mm/dia.</li>
+        <li><b>Defesa Civil</b>: alertas publicados no IDAP (Interface de Divulgação de Alertas Públicos) em formato CAP 1.2, o canal que dispara o SMS 40199 e o Defesa Civil Alerta. Cada alerta traz polígono e códigos IBGE. Os níveis seguem a Portaria MIDR nº 2.458/2026 (baixo, moderado, alto, severo e extremo); quando o alerta não informa o nível por extenso, ele é deduzido da severidade CAP.</li>
+        <li><b>CEMADEN</b>: chuva medida pelos pluviômetros automáticos (dados abertos). Ela substitui a estimativa do modelo nas horas que já passaram. As estações são associadas ao município pelo código (que começa com o código IBGE do município) e só entram janelas sem falhas de transmissão maiores que 2 h. Se a coleta automática falhar, um CSV baixado do Mapa Interativo pode ser importado no painel. O CEMADEN não publica API de alertas; seus alertas seguem para a Defesa Civil, que os divulga pelo IDAP. Um nível informado pela Direção pode ser lançado manualmente.</li>
+        <li><b>Áreas de risco</b>: base inicial com posições aproximadas; a referência oficial é a setorização do SGB, que pode ser importada.</li>
+      </ul>
+      <h3>1. Índice ponderado (IRC)</h3>
+      <p>Para cada município <i>i</i> e fator <i>k</i> (intensidade máxima na janela, acumulado desde 6 h antes do deslocamento até o fim do turno, chuva das 72 h anteriores, rajada máxima e alerta oficial), o valor observado vira um perigo <code>h<sub>k</sub> ∈ [0, 1]</code> pelos limiares configurados. O perigo do município é <code>H<sub>i</sub> = Σ w<sub>k</sub> h<sub>k</sub></code>. O perigo regional mistura a média ponderada pela parcela de estudantes com o pior município: <code>H = 0,7 Σ s<sub>i</sub> H<sub>i</sub> + 0,3 max H<sub>i</sub></code>. A exposição <code>E</code> mede quanto as áreas de risco são ativadas (deslizamento responde mais à chuva antecedente; inundação, à intensidade). O índice é <code>IRC = 100 [(1 − λ) H + λ E]</code>, com λ igual ao peso da exposição. Se a opção de piso estiver ligada, alertas oficiais elevam o índice a no mínimo 25, 50 ou 75 pontos.</p>
+      <p>Faixas: abaixo de 25, manter; de 25 a 45, atenção; de 45 a 65, flexibilizar; de 65 a 80, suspender o turno; acima de 80, suspender atividades presenciais.</p>
+      <h3>2. Probabilidade e custo-perda</h3>
+      <p>A probabilidade meteorológica é a fração de membros do ensemble que, na janela do turno, passam do limiar de acumulado na janela ou do limiar de 3 h, com o estimador <code>(k + 0,5) / (n + 1)</code> para evitar 0% e 100% absolutos. Cada nível de alerta oficial tem uma probabilidade associada, configurável. As duas evidências se combinam como <code>P = 1 − (1 − P<sub>modelos</sub>)(1 − P<sub>alerta</sub>)</code>, o que supõe independência entre elas.</p>
+      <p>A decisão segue o modelo clássico custo-perda: suspender custa <i>C</i> (aula perdida, reposição) e manter durante um evento custa <i>L</i> (estudantes expostos no deslocamento). Suspender é a escolha de menor custo esperado quando <code>P ≥ C/L</code>. Uma razão de 0,30 significa que a Direção aceita suspender em vão cerca de duas vezes para cada vez em que evita um evento perigoso.</p>
+      <h3>3. Inteligência artificial</h3>
+      <p>Um sistema de inferência fuzzy do tipo Mamdani, executado no navegador, recebe quatro entradas (chuva prevista, saturação do solo, alerta oficial e exposição), aplica 12 regras escritas em linguagem natural e calcula o grau de suspensão pelo centroide. As regras disparadas aparecem na tela, então a decisão pode ser auditada. O parecer por modelo de linguagem é opcional e apenas comenta os números do painel.</p>
+      <h3>Combinação</h3>
+      <p>Por padrão, a recomendação é a mediana dos três métodos. Com o piso ligado, nunca fica abaixo do nível indicado pelo alerta oficial (moderado ou amarelo pedem atenção; alto ou laranja pedem flexibilização; severo, extremo ou vermelho pedem suspensão).</p>
+      <h3>Limitações</h3>
+      <ul>
+        <li>Pesos, limiares e probabilidades por alerta são valores de especialista e ainda não foram calibrados com o histórico do câmpus. O registro de decisões existe para permitir essa calibração.</li>
+        <li>A previsão tem resolução de alguns quilômetros e não representa chuvas muito localizadas.</li>
+        <li>Sem o coletor (por exemplo, abrindo o arquivo fora do GitHub Pages), o painel tenta o INMET direto ou pelo Worker, e a Defesa Civil fica no ajuste manual.</li>
+        <li>Os formatos do IDAP, do INMET e do CEMADEN não têm documentação pública estável. O coletor registra o que encontrou em <code>dados/alertas.json</code> (campo <code>diagnostico</code>) para facilitar ajustes.</li>
+        <li>O painel apoia a decisão e não substitui comunicados da Defesa Civil nem a avaliação da Direção.</li>
+      </ul>
+      <h3>Referências</h3>
+      <ul>
+        <li>Thompson, J. C. (1952). On the operational deficiencies in categorical weather forecasts. <i>Bulletin of the American Meteorological Society</i>, 33(6).</li>
+        <li>Murphy, A. H. (1977). The value of climatological, categorical and probabilistic forecasts in the cost-loss ratio situation. <i>Monthly Weather Review</i>, 105(7).</li>
+        <li>Mamdani, E. H.; Assilian, S. (1975). An experiment in linguistic synthesis with a fuzzy logic controller. <i>International Journal of Man-Machine Studies</i>, 7(1).</li>
+        <li>Brasil. Ministério da Integração e do Desenvolvimento Regional. Portaria MIDR nº 2.458, de 30 de julho de 2026 (Idap e Defesa Civil Alerta).</li>
+        <li>Serviço Geológico do Brasil. Setorização de áreas de risco geológico (repositório RIGEO).</li>
+        <li>Zippenfenig, P. Open-Meteo.com Weather API. Zenodo. doi:10.5281/zenodo.7970649.</li>
+      </ul>
+    </div>
+  </details>
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <p><b>RISCO.sj</b> versão <span id="versao"></span>, 2026. Ramon Mayor Martins, IFSC Câmpus São José, Área de Telecomunicações. Contato: <a href="mailto:ramon.mayor@ifsc.edu.br">ramon.mayor@ifsc.edu.br</a></p>
+    <p>Dados: Open-Meteo (CC BY 4.0), INMET, CEMADEN, Defesa Civil de Santa Catarina e Serviço Geológico do Brasil. Mapa: Esri e colaboradores do OpenStreetMap, ou CARTO quando configurado.</p>
+    <p>Ferramenta de apoio à decisão. Não substitui os alertas e comunicados oficiais da Defesa Civil. Em emergência, ligue 199 (Defesa Civil) ou 193 (Bombeiros).</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ================= constantes ================= */
+const VERSAO = '1.2';
+const TZ = 'America/Sao_Paulo';
+const CHAVE_CFG = 'riscosj.cfg.v1', CHAVE_LOG = 'riscosj.log.v1', CHAVE_AREAS = 'riscosj.areas.v1';
+const DEMO = new URLSearchParams(location.search).has('demo');
+
+const DC_NOMES = ['Nenhum', 'Baixo', 'Moderado', 'Alto', 'Severo', 'Extremo'];
+const INMET_NOMES = ['Nenhum', 'Amarelo', 'Laranja', 'Vermelho'];
+const INMET_DESC = ['sem aviso', 'perigo potencial', 'perigo', 'grande perigo'];
+const CEM_NOMES = ['Nenhum', 'Moderado', 'Alto', 'Muito alto'];
+const H_DC = [0, 0.15, 0.35, 0.6, 0.85, 1];
+const H_INMET = [0, 0.35, 0.65, 1];
+const H_CEM = [0, 0.35, 0.65, 0.95];
+
+const NIVEIS = [
+  { nome: 'Manter aulas', curto: 'Manter', ico: 'ok', cor: '#32A041',
+    acao: 'As atividades presenciais seguem normalmente; acompanhe os boletins.' },
+  { nome: 'Manter, em atenção', curto: 'Atenção', ico: 'atencao', cor: '#E2AE00',
+    acao: 'Mantenha as aulas, reforce o monitoramento e deixe um comunicado preparado.' },
+  { nome: 'Flexibilizar', curto: 'Flexibilizar', ico: 'alerta', cor: '#E0702A',
+    acao: 'Mantenha o câmpus aberto com flexibilização: ausências justificadas para quem não puder se deslocar com segurança, liberação antecipada e atividades alternativas.' },
+  { nome: 'Suspender o turno', curto: 'Suspender', ico: 'pare', cor: '#C8191E',
+    acao: 'Suspenda as atividades presenciais do turno e comunique com antecedência.' },
+  { nome: 'Suspender atividades presenciais', curto: 'Suspender tudo', ico: 'pare', cor: '#8E0F13',
+    acao: 'Suspenda todas as atividades presenciais e siga as orientações da Defesa Civil.' }
+];
+
+const ICO = {
+  ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><path d="M7 12.4l3.3 3.3L17.2 8.8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  atencao: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><path d="M12 6.6v7" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.5" fill="#fff"/></svg>',
+  alerta: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L23.2 21.6H.8z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="M12 9v6" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="18.2" r="1.4" fill="#fff"/></svg>',
+  pare: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.6 1.2h8.8l6.4 6.4v8.8l-6.4 6.4H7.6l-6.4-6.4V7.6z" fill="currentColor"/><path d="M6.8 12h10.4" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg>'
+};
+
+const DEFAULTS = {
+  campus: { nome: 'IFSC Câmpus São José', lat: -27.608476, lon: -48.633269 },
+  origens: [
+    { id: 'sj',  nome: 'São José',                  lat: -27.608476, lon: -48.633269, parte: 45, ibge: '4216602' },
+    { id: 'pal', nome: 'Palhoça',                   lat: -27.6449,   lon: -48.6697,   parte: 20, ibge: '4211900' },
+    { id: 'fln', nome: 'Florianópolis',             lat: -27.5954,   lon: -48.5480,   parte: 20, ibge: '4205407' },
+    { id: 'big', nome: 'Biguaçu',                   lat: -27.4977,   lon: -48.6521,   parte: 10, ibge: '4202305' },
+    { id: 'sai', nome: 'Santo Amaro da Imperatriz', lat: -27.6860,   lon: -48.7790,   parte: 5,  ibge: '4215703' }
+  ],
+  turnos: [
+    { id: 'M', nome: 'Matutino',   ini: '07:30', fim: '12:00' },
+    { id: 'V', nome: 'Vespertino', ini: '13:30', fim: '18:00' },
+    { id: 'N', nome: 'Noturno',    ini: '18:30', fim: '22:40' }
+  ],
+  deslocamentoH: 1.5,
+  pesos: { intensidade: 25, acumulado: 20, antecedente: 15, vento: 10, alerta: 30 },
+  pesoExposicao: 20,
+  limiares: {
+    intensidade: [[0, 0], [5, 0.05], [20, 0.35], [30, 0.6], [60, 1]],
+    acumulado:   [[0, 0], [10, 0.1], [25, 0.35], [45, 0.6], [90, 1]],
+    antecedente: [[0, 0], [30, 0.2], [60, 0.5], [100, 0.8], [150, 1]],
+    vento:       [[0, 0], [40, 0.2], [60, 0.5], [100, 1]]
+  },
+  ensemble: { acumuladoMM: 45, tresHorasMM: 40, modelos: 'icon_seamless,gfs025,ecmwf_ifs025' },
+  custoPerda: 0.30,
+  probAlerta: { dc: [0, 0.05, 0.12, 0.28, 0.55, 0.85], inmet: [0, 0.10, 0.25, 0.55], cemaden: [0, 0.15, 0.35, 0.6] },
+  consolidacao: 'mediana',
+  respeitarPiso: true,
+  manual: { dc: -1, dcValidade: 'hoje', dcNota: '', inmet: -1, cemaden: 0 },
+  usarPluviometros: true,
+  workerURL: '',
+  cartoKey: ''
+};
+
+const FONTE_DC_SJ = 'Citada pela Defesa Civil de São José entre os pontos críticos de deslizamento (CBN Floripa); posição aproximada.';
+const FONTE_FORQ = 'Planície de inundação da bacia do rio Forquilhas (Cardozo, Herrmann e Pereira, GEOUSP); posição aproximada.';
+const AREAS_BASE = [
+  { nome: 'Colônia Santana', mun: 'São José', tipo: 'desl', grau: 'muito alto', lat: -27.5993, lon: -48.7300, fonte: FONTE_DC_SJ },
+  { nome: 'Forquilhinha', mun: 'São José', tipo: 'desl', grau: 'muito alto', lat: -27.5923, lon: -48.6407, fonte: FONTE_DC_SJ },
+  { nome: 'Jardim Cidade de Florianópolis', mun: 'São José', tipo: 'desl', grau: 'alto', lat: -27.5720, lon: -48.6300, fonte: FONTE_DC_SJ.replace('posição aproximada', 'posição estimada pela vizinhança') },
+  { nome: 'Rio Forquilhas, trecho de Forquilhas', mun: 'São José', tipo: 'inund', grau: 'alto', lat: -27.5753, lon: -48.6682, fonte: FONTE_FORQ },
+  { nome: 'Rio Forquilhas, trecho de Forquilhinha', mun: 'São José', tipo: 'inund', grau: 'alto', lat: -27.6035, lon: -48.6452, fonte: FONTE_FORQ },
+  { nome: 'Maciço do Morro da Cruz', mun: 'Florianópolis', tipo: 'desl', grau: 'alto', lat: -27.5900, lon: -48.5390, fonte: 'Encosta urbana com ocupação densa; posição aproximada, confirmar na setorização do SGB.' }
+];
+const AREAS_SEM_POSICAO = ['Morro do Avaí', 'Jardim Solemar', 'Dona Adélia'];
+
+/* ================= estado ================= */
+const S = {
+  cfg: null, fc: null, ens: null,
+  fcEstado: 'pendente', ensEstado: 'pendente', fcErro: '', ensErro: '',
+  inmet: { estado: 'pendente', avisos: [] }, dc: { estado: 'pendente', alertas: [] }, pluv: { estado: 'pendente', estacoes: [] }, coletor: null,
+  areas: [], areasFonte: 'base',
+  janelas: [], R: {}, sel: null,
+  sim: { on: false, ant: 80, acc: 60, int: 35, gust: 70, pens: 50, dc: 3, inmet: 2 },
+  mapa: null, camadas: {}, atualizado: null, origemGrafico: 0, carregando: false
+};
+
+/* ================= utilitários ================= */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const clamp = (x, a, b) => Math.min(b === undefined ? 1 : b, Math.max(a === undefined ? 0 : a, x));
+const nz = v => (v === null || v === undefined || isNaN(v)) ? 0 : +v;
+const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const fmt = (x, d) => (x === null || x === undefined || isNaN(x)) ? 's/d' : Number(x).toLocaleString('pt-BR', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+const pct = p => p >= 0.995 ? 'acima de 99%' : (p > 0 && p < 0.005) ? 'abaixo de 1%' : fmt(100 * p, 0) + '%';
+const semTravessao = t => String(t).replace(/(\d)\s*[\u2013\u2014]\s*(\d)/g, '$1-$2').replace(/\s*[\u2013\u2014]\s*/g, ', ');
+
+function pw(x, anc) {
+  if (x === null || x === undefined || isNaN(x)) return 0;
+  if (x <= anc[0][0]) return anc[0][1];
+  for (let i = 1; i < anc.length; i++) {
+    const x0 = anc[i - 1][0], y0 = anc[i - 1][1], x1 = anc[i][0], y1 = anc[i][1];
+    if (x <= x1) return x1 === x0 ? y1 : y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  }
+  return anc[anc.length - 1][1];
+}
+function getPath(o, p) { return p.split('.').reduce((a, k) => (a === null || a === undefined) ? a : a[k], o); }
+function setPath(o, p, v) { const ks = p.split('.'); let a = o; for (let i = 0; i < ks.length - 1; i++) a = a[ks[i]]; a[ks[ks.length - 1]] = v; }
+function deepMerge(a, b) {
+  for (const k in b) {
+    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) deepMerge(a[k], b[k]);
+    else a[k] = b[k];
+  }
+  return a;
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+function distKm(a, b, c, d) { const r = Math.PI / 180, x = (d - b) * r * Math.cos((a + c) / 2 * r), y = (c - a) * r; return 6371 * Math.hypot(x, y); }
+function baixar(nome, conteudo, tipo) {
+  const blob = new Blob([conteudo], { type: tipo });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+async function copiar(texto, botao) {
+  try { await navigator.clipboard.writeText(texto); }
+  catch (e) { const t = document.createElement('textarea'); t.value = texto; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e2) {} t.remove(); }
+  if (botao) { const o = botao.textContent; botao.textContent = 'Copiado'; setTimeout(() => { botao.textContent = o; }, 1600); }
+}
+
+/* ================= tempo (horário de Brasília) ================= */
+function agoraLocal(d) {
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d || new Date());
+  const g = t => (p.find(x => x.type === t) || {}).value;
+  let h = g('hour'); if (h === '24') h = '00';
+  return g('year') + '-' + g('month') + '-' + g('day') + 'T' + h + ':' + g('minute');
+}
+const hojeStr = () => agoraLocal().slice(0, 10);
+const paraMin = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), +s.slice(11, 13) || 0, +s.slice(14, 16) || 0) / 60000;
+const deMin = m => new Date(m * 60000).toISOString().slice(0, 16);
+const somaDias = (d, n) => deMin(paraMin(d + 'T00:00') + n * 1440).slice(0, 10);
+const hhmm = s => s.replace(':', 'h');
+function rotuloDia(d) { return new Date(paraMin(d + 'T12:00') * 60000).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'UTC' }); }
+function rotuloCurto(d) { const w = new Date(paraMin(d + 'T12:00') * 60000).toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'UTC' }).replace('.', ''); return w + ' ' + d.slice(8, 10) + '/' + d.slice(5, 7); }
+function rotuloHora(m) { const a = deMin(m - 60), b = deMin(m); return rotuloCurto(b.slice(0, 10)) + ', ' + (+a.slice(11, 13)) + 'h às ' + (+b.slice(11, 13)) + 'h'; }
+function paraLocal(s, h) {
+  if (!s) return null;
+  let t = String(s).trim();
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(t)) { const d = new Date(t); if (!isNaN(d)) return agoraLocal(d); }
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(t)) t = t.slice(6, 10) + '-' + t.slice(3, 5) + '-' + t.slice(0, 2) + t.slice(10);
+  t = t.replace(' ', 'T');
+  if (t.length === 10) t += 'T' + (h ? String(h).slice(0, 5) : '00:00');
+  t = t.slice(0, 16);
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(t) ? t : null;
+}
+
+/* ================= configuração ================= */
+function carregarCfg() {
+  try {
+    const s = JSON.parse(localStorage.getItem(CHAVE_CFG) || 'null');
+    if (s && s.v === 1 && s.cfg) return deepMerge(clone(DEFAULTS), s.cfg);
+  } catch (e) {}
+  return clone(DEFAULTS);
+}
+function salvarCfg() { try { localStorage.setItem(CHAVE_CFG, JSON.stringify({ v: 1, cfg: S.cfg })); } catch (e) {} }
+function pesosNorm() {
+  const p = S.cfg.pesos; let s = 0; for (const k in p) s += Math.max(0, +p[k] || 0);
+  const o = {}; for (const k in p) o[k] = s > 0 ? Math.max(0, +p[k] || 0) / s : 0.2;
+  return o;
+}
+function partesNorm() {
+  const s = S.cfg.origens.reduce((a, o) => a + Math.max(0, +o.parte || 0), 0);
+  return S.cfg.origens.map(o => s > 0 ? Math.max(0, +o.parte || 0) / s : 1 / S.cfg.origens.length);
+}
+
+/* ================= áreas de risco ================= */
+function origemMaisProxima(lat, lon) {
+  let best = 0, bd = Infinity;
+  S.cfg.origens.forEach((o, i) => { const d = distKm(lat, lon, +o.lat, +o.lon); if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+function prepararAreas(lista) { return lista.map(a => Object.assign({}, a, { oi: origemMaisProxima(a.lat, a.lon) })); }
+function carregarAreas() {
+  let lista = null, fonte = 'base';
+  try { const s = JSON.parse(localStorage.getItem(CHAVE_AREAS) || 'null'); if (s && Array.isArray(s.areas) && s.areas.length) { lista = s.areas; fonte = s.fonte || 'importada'; } } catch (e) {}
+  S.areas = prepararAreas(lista || AREAS_BASE); S.areasFonte = lista ? fonte : 'base';
+}
+function centroide(g) {
+  if (!g || !g.coordinates) return null;
+  const pts = []; const andar = c => { if (typeof c[0] === 'number') pts.push(c); else c.forEach(andar); };
+  andar(g.coordinates);
+  if (!pts.length) return null;
+  const s = pts.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]);
+  return [s[0] / pts.length, s[1] / pts.length];
+}
+function classificar(texto) {
+  const t = norm(texto);
+  return { tipo: /inund|alag|enchent|enxurr|hidrol/.test(t) ? 'inund' : 'desl', grau: /muito alto|\br4\b|ma\b/.test(t) ? 'muito alto' : 'alto' };
+}
+function areasDeGeoJSON(gj) {
+  const fs = gj.type === 'FeatureCollection' ? gj.features : gj.type === 'Feature' ? [gj] : [];
+  return fs.map((f, i) => {
+    const c = centroide(f.geometry); if (!c) return null;
+    const p = f.properties || {};
+    const cl = classificar(Object.values(p).join(' '));
+    const nome = p.NOME || p.nome || p.Name || p.name || p.LOCAL || p.local || p.BAIRRO || p.bairro || p.SETOR || p.setor || ('Setor ' + (i + 1));
+    const mun = p.MUNICIPIO || p.municipio || p.Municipio || '';
+    return { nome: String(nome), mun: String(mun), tipo: cl.tipo, grau: cl.grau, lat: c[1], lon: c[0], fonte: 'Arquivo importado', geom: f.geometry };
+  }).filter(Boolean);
+}
+function areasDeKML(txt) {
+  const doc = new DOMParser().parseFromString(txt, 'text/xml');
+  return Array.from(doc.getElementsByTagName('Placemark')).map((pm, i) => {
+    const nomeEl = pm.getElementsByTagName('name')[0];
+    const pts = [];
+    Array.from(pm.getElementsByTagName('coordinates')).forEach(ce => ce.textContent.trim().split(/\s+/).forEach(t => { const v = t.split(',').map(Number); if (!isNaN(v[0]) && !isNaN(v[1])) pts.push([v[0], v[1]]); }));
+    if (!pts.length) return null;
+    const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]);
+    const cl = classificar(pm.textContent);
+    const geom = pts.length > 2 ? { type: 'Polygon', coordinates: [pts] } : null;
+    return { nome: nomeEl ? nomeEl.textContent.trim() : 'Setor ' + (i + 1), mun: '', tipo: cl.tipo, grau: cl.grau, lat: c[1], lon: c[0], fonte: 'Arquivo importado', geom };
+  }).filter(Boolean);
+}
+function salvarAreas(lista, fonte) {
+  try { localStorage.setItem(CHAVE_AREAS, JSON.stringify({ fonte, areas: lista })); }
+  catch (e) { try { localStorage.setItem(CHAVE_AREAS, JSON.stringify({ fonte, areas: lista.map(a => Object.assign({}, a, { geom: null })) })); } catch (e2) {} }
+}
+
+/* ================= busca de dados ================= */
+async function buscarJSON(url, ms) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms || 20000);
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) { let msg = 'HTTP ' + r.status; try { const j = await r.json(); if (j && j.reason) msg += ': ' + j.reason; } catch (e) {} throw new Error(msg); }
+    return await r.json();
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('tempo esgotado');
+    if (e instanceof TypeError) throw new Error('bloqueado ou sem conexão');
+    throw e;
+  } finally { clearTimeout(t); }
+}
+async function buscarVia(url) {
+  try { return await buscarJSON(url, 15000); }
+  catch (e1) {
+    const w = (S.cfg.workerURL || '').trim().replace(/\/$/, '');
+    if (!w) throw e1;
+    return await buscarJSON(w + '/proxy?url=' + encodeURIComponent(url), 20000);
+  }
+}
+async function buscarPrevisao() {
+  const os = S.cfg.origens;
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + os.map(o => (+o.lat).toFixed(4)).join(',') +
+    '&longitude=' + os.map(o => (+o.lon).toFixed(4)).join(',') +
+    '&hourly=precipitation,precipitation_probability,wind_gusts_10m&past_days=3&forecast_days=3&timezone=' + encodeURIComponent(TZ);
+  const r = await buscarJSON(url, 25000);
+  const arr = Array.isArray(r) ? r : [r];
+  return arr.map(o => {
+    const h = o.hourly || {};
+    if (!h.time) throw new Error('resposta sem série horária');
+    return { tm: h.time.map(paraMin), p: (h.precipitation || []).map(nz), pop: (h.precipitation_probability || []).map(nz), g: (h.wind_gusts_10m || []).map(nz) };
+  });
+}
+async function buscarEnsemble() {
+  const c = S.cfg.campus;
+  const tentativas = [S.cfg.ensemble.modelos, DEFAULTS.ensemble.modelos, 'icon_seamless,gfs025', 'icon_seamless'].filter((v, i, a) => v && a.indexOf(v) === i);
+  let ultimo = null;
+  for (const m of tentativas) {
+    try {
+      const url = 'https://ensemble-api.open-meteo.com/v1/ensemble?latitude=' + c.lat + '&longitude=' + c.lon +
+        '&hourly=precipitation&models=' + encodeURIComponent(m) + '&past_days=1&forecast_days=3&timezone=' + encodeURIComponent(TZ);
+      const r = await buscarJSON(url, 30000);
+      const h = r.hourly; if (!h || !h.time) throw new Error('resposta sem série horária');
+      const membros = Object.keys(h).filter(k => k.indexOf('precipitation') === 0)
+        .map(k => ({ k, v: h[k].map(x => (x === null || x === undefined) ? NaN : +x) }))
+        .filter(s => s.v.some(x => !isNaN(x)));
+      if (membros.length < 5) throw new Error('poucos membros');
+      return { tm: h.time.map(paraMin), membros, modelos: m };
+    } catch (e) { ultimo = e; }
+  }
+  throw ultimo || new Error('indisponível');
+}
+function sevINMET(txt, cor) {
+  const t = norm(txt);
+  if (t.indexOf('grande perigo') >= 0) return 3;
+  if (t.indexOf('potencial') >= 0) return 1;
+  if (t.indexOf('perigo') >= 0) return 2;
+  const c = norm(cor);
+  if (/ff0000|red|vermelh/.test(c)) return 3;
+  if (/ffa500|ff8c00|orange|laranja/.test(c)) return 2;
+  return 1;
+}
+function nomesMunicipios(campo) {
+  return String(campo || '').split(/[,;\n]/).map(s => norm(s.replace(/\s*-\s*sc\s*$/i, '').replace(/\(sc\)/i, ''))).filter(Boolean);
+}
+async function buscarINMET() {
+  const d = await buscarVia('https://apiprevmet3.inmet.gov.br/avisos/ativos');
+  let lista = [];
+  if (Array.isArray(d)) lista = d; else if (d && typeof d === 'object') Object.values(d).forEach(v => { if (Array.isArray(v)) lista = lista.concat(v); });
+  const os = S.cfg.origens;
+  return lista.map(a => {
+    const geo = String(Array.isArray(a.geocodes) ? a.geocodes.join(',') : (a.geocodes || a.geocode || ''));
+    const muns = nomesMunicipios(a.municipios || a.cidades || '');
+    const alvo = os.filter(o => (o.ibge && geo.indexOf(o.ibge) >= 0) || muns.indexOf(norm(o.nome)) >= 0);
+    if (!alvo.length) return null;
+    return {
+      desc: a.descricao || a.evento || a.tipo || 'Aviso meteorológico',
+      sev: sevINMET(a.severidade || a.nivel || a.grau || '', a.aviso_cor || a.cor || ''),
+      ini: paraLocal(a.inicio, null) || paraLocal(a.data_inicio, a.hora_inicio),
+      fim: paraLocal(a.fim, null) || paraLocal(a.data_fim, a.hora_fim),
+      ibges: alvo.map(o => o.ibge), munTxt: alvo.map(o => o.nome).join(', ')
+    };
+  }).filter(Boolean);
+}
+/* ----- coletor (GitHub Actions) ----- */
+const IDADE_MAX_COLETOR = 6 * 60;   // minutos; acima disso o arquivo é ignorado
+const IDADE_AVISO_COLETOR = 45;     // minutos; acima disso o painel avisa que está desatualizado
+function pontoNoPoligono(lat, lon, poli) {
+  let c = false;
+  for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) {
+    const yi = poli[i][0], xi = poli[i][1], yj = poli[j][0], xj = poli[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi)) c = !c;
+  }
+  return c;
+}
+function atinge(a, o) {
+  if (o.ibge && ((a.ibges || []).indexOf(o.ibge) >= 0 || (a.geocodes || []).indexOf(o.ibge) >= 0)) return true;
+  return (a.poligonos || []).some(p => p.length > 2 && pontoNoPoligono(+o.lat, +o.lon, p));
+}
+function municipiosDoAlerta(a) { return S.cfg.origens.filter(o => atinge(a, o)).map(o => o.nome).join(', '); }
+async function buscarColetor() {
+  const d = await buscarJSON('dados/alertas.json?t=' + Date.now(), 12000);
+  if (!d || d.versao !== 1 || !d.gerado_em) throw new Error('arquivo do coletor em formato inesperado');
+  const gerado = paraLocal(d.gerado_em), idade = paraMin(agoraLocal()) - paraMin(gerado);
+  if (idade > IDADE_MAX_COLETOR) throw new Error('arquivo do coletor com mais de 6 h');
+  const conv = a => Object.assign({}, a, { ini: paraLocal(a.inicio), fim: paraLocal(a.fim), poligonos: a.poligonos || [], ibges: a.ibges || [], geocodes: a.geocodes || [] });
+  return {
+    gerado, idade, fontes: d.fontes || {},
+    dc: (d.defesa_civil || []).map(conv),
+    inmet: (d.inmet || []).map(a => Object.assign(conv(a), { desc: a.titulo || a.evento || 'Aviso meteorológico', sev: Math.min(3, Math.max(1, +a.nivel || 1)) })),
+    pluv: (d.pluviometros || []).filter(e => e && e.acc).map(e => Object.assign({}, e, { quando: e.quando ? paraLocal(e.quando) : null }))
+  };
+}
+
+/* ----- pluviômetros: chuva medida nas horas que já passaram ----- */
+function estacoesDaOrigem(i) {
+  if (!S.cfg.usarPluviometros || S.sim.on || !S.pluv.estacoes.length) return [];
+  const o = S.cfg.origens[i], agora = paraMin(agoraLocal());
+  return S.pluv.estacoes.filter(e => {
+    if (e.quando && agora - paraMin(e.quando) > 180) return false;
+    if (norm(e.municipio) === norm(o.nome)) return true;
+    return e.lat !== null && e.lat !== undefined && distKm(+o.lat, +o.lon, +e.lat, +e.lon) <= 10;
+  });
+}
+function interpAcc(acc, h) {
+  if (h <= 0) return 0;
+  const pts = [[0, 0]].concat(Object.keys(acc).map(k => [+k, +acc[k]]).filter(p => !isNaN(p[0]) && !isNaN(p[1]) && p[1] >= 0)).sort((a, b) => a[0] - b[0]);
+  if (pts.length < 2 || h > pts[pts.length - 1][0] + 1e-9) return null;
+  for (let k = 1; k < pts.length; k++) if (h <= pts[k][0]) { const a = pts[k - 1], b = pts[k]; return a[1] + (b[1] - a[1]) * (h - a[0]) / ((b[0] - a[0]) || 1); }
+  return null;
+}
+function chuvaMedida(est, h) {
+  const v = est.map(e => interpAcc(e.acc, h)).filter(x => x !== null).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+}
+const numBR = v => { if (v === null || v === undefined) return NaN; let t = String(v).trim(); t = t.indexOf(',') >= 0 && t.indexOf('.') >= 0 ? t.replace(/\./g, '').replace(',', '.') : t.replace(',', '.'); return parseFloat(t); };
+function lerCSV(texto) {
+  const ls = texto.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim());
+  if (ls.length < 2) return [];
+  const sep = (ls[0].match(/;/g) || []).length >= (ls[0].match(/,/g) || []).length ? ';' : ',';
+  const cab = ls[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+  return ls.slice(1).map(l => { const v = l.split(sep), o = {}; cab.forEach((c, i) => { o[c] = (v[i] || '').trim().replace(/^"|"$/g, ''); }); return o; });
+}
+// Mesma regra do coletor: o pluviômetro do CEMADEN manda um registro por hora quando seco e a cada
+// 10 min quando chove; uma janela só vale sem buraco maior que 2 h e sem começar antes do 1º registro.
+function acumularSerie(pontos, ref) {
+  pontos = pontos.filter(p => p[0] <= ref + 10).sort((a, b) => a[0] - b[0]);
+  if (!pontos.length || ref - pontos[pontos.length - 1][0] > 120) return {};
+  const acc = {};
+  for (const h of [1, 3, 6, 12, 24, 48, 72, 96]) {
+    const ini = ref - h * 60, dentro = pontos.filter(p => p[0] > ini), antes = pontos.some(p => p[0] <= ini);
+    if (!antes && (!dentro.length || dentro[0][0] - ini > 70)) break;
+    const ts = [ini].concat(dentro.map(p => p[0]), [ref]);
+    if (ts.some((t, k) => k > 0 && t - ts[k - 1] > 120)) break;
+    acc[h] = Math.round(dentro.reduce((s, p) => s + p[1], 0) * 10) / 10;
+  }
+  return acc;
+}
+function estacoesDeCSV(regs, utc) {
+  const k = (r, nomes) => Object.keys(r).find(c => nomes.indexOf(norm(c).replace(/_/g, '')) >= 0);
+  const g = {}, agora = paraMin(agoraLocal());
+  regs.forEach(r => {
+    const kd = k(r, ['datahora', 'data']), kv = k(r, ['valormedida', 'valor', 'chuva']);
+    if (!kd || !kv) return;
+    const kc = k(r, ['codestacao', 'idestacao', 'cod']), km = k(r, ['municipio', 'cidade']), kn = k(r, ['nomeestacao', 'nome', 'estacao']), kla = k(r, ['latitude', 'lat']), klo = k(r, ['longitude', 'lon']);
+    const cod = kc ? String(r[kc]) : '', mun = km ? r[km] : '';
+    const o = S.cfg.origens.find(x => x.ibge && cod.replace(/\D/g, '').slice(0, 7) === x.ibge) || S.cfg.origens.find(x => mun && norm(mun) === norm(x.nome));
+    if (!o) return;
+    const s = String(r[kd]).replace(' ', 'T').slice(0, 16);
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) return;
+    const t = paraMin(s) - (utc ? 180 : 0), v = numBR(r[kv]);
+    if (isNaN(v) || v < 0) return;
+    const id = cod || (o.nome + (kn ? r[kn] : '')), la = kla ? numBR(r[kla]) : NaN, lo = klo ? numBR(r[klo]) : NaN;
+    (g[id] = g[id] || { id, nome: kn ? r[kn] : '', municipio: o.nome, ibge: o.ibge, lat: isNaN(la) ? null : la, lon: isNaN(lo) ? null : lo, pontos: [] }).pontos.push([t, v]);
+  });
+  let ultimo = -Infinity;
+  const est = Object.values(g).map(e => { e.pontos.forEach(p => { if (p[0] > ultimo) ultimo = p[0]; }); const acc = acumularSerie(e.pontos, agora); delete e.pontos; return Object.assign(e, { acc, quando: agoraLocal() }); }).filter(e => Object.keys(e.acc).length);
+  return { est, nGrupos: Object.keys(g).length, ultimo };
+}
+function somaPonderada(f, a, b) {
+  let s = 0;
+  for (let k = 0; k < f.tm.length; k++) { const t1 = f.tm[k], t0 = t1 - 60, sob = Math.min(t1, b) - Math.max(t0, a); if (sob > 0) s += nz(f.p[k]) * sob / 60; }
+  return s;
+}
+function chuvaPeriodo(f, a, b, est) {
+  const agora = paraMin(agoraLocal());
+  if (!est.length || a >= agora) return { v: nz(somaIdx(f.p, idxJan(f.tm, a, b))), medida: false };
+  const fimPassado = Math.min(b, agora);
+  const c1 = chuvaMedida(est, (agora - a) / 60), c2 = chuvaMedida(est, (agora - fimPassado) / 60);
+  if (c1 === null || c2 === null) return { v: nz(somaIdx(f.p, idxJan(f.tm, a, b))), medida: false };
+  return { v: Math.max(0, c1 - c2) + (b > agora ? somaPonderada(f, agora, b) : 0), medida: true };
+}
+
+/* ================= séries ================= */
+function idxJan(tm, a, b) { const o = []; for (let i = 0; i < tm.length; i++) if (tm[i] > a && tm[i] - 60 < b) o.push(i); return o; }
+function idxInst(tm, a, b) { const o = []; for (let i = 0; i < tm.length; i++) if (tm[i] >= a && tm[i] <= b) o.push(i); return o; }
+function somaIdx(v, idx) { let s = 0; for (const i of idx) { const x = v[i]; if (x === null || x === undefined || isNaN(x)) return NaN; s += x; } return s; }
+function maxIdx(v, idx) { let m = 0; for (const i of idx) { const x = v[i]; if (x === null || x === undefined || isNaN(x)) continue; if (x > m) m = x; } return m; }
+function max3h(tm, v, a, b) {
+  let m = 0;
+  for (const i of idxJan(tm, a, b)) { if (i < 2) continue; const s = v[i] + v[i - 1] + v[i - 2]; if (isNaN(s)) return NaN; if (s > m) m = s; }
+  return m;
+}
+
+/* ================= janelas dos turnos ================= */
+function montarJanelas() {
+  const h = hojeStr(), a = somaDias(h, 1), J = [];
+  [['hoje', h], ['amanha', a]].forEach(par => S.cfg.turnos.forEach(t => {
+    const ini = paraMin(par[1] + 'T' + t.ini), fim = paraMin(par[1] + 'T' + t.fim);
+    J.push({ chave: par[0] + '-' + t.id, dia: par[0], data: par[1], t, ini, fim, jIni: ini - Math.round((+S.cfg.deslocamentoH || 0) * 60), jFim: fim });
+  }));
+  return J;
+}
+function proximaJanela(J) { const n = paraMin(agoraLocal()); return (J.find(j => j.fim > n) || J[J.length - 1]).chave; }
+function sobrepoe(a, j) { const i = a.ini ? paraMin(a.ini) : -Infinity, f = a.fim ? paraMin(a.fim) : Infinity; return i < j.jFim && f > j.jIni; }
+
+/* ================= modelo ================= */
+const temDados = () => S.sim.on || !!S.fc;
+function nivelDe(x) { return x < 0.25 ? 0 : x < 0.45 ? 1 : x < 0.65 ? 2 : x < 0.80 ? 3 : 4; }
+
+function alertaPara(j, o) {
+  const c = S.cfg, m = c.manual;
+  let dc = 0, inmet = 0, cem = 0;
+  if (S.sim.on) { dc = +S.sim.dc; inmet = +S.sim.inmet; }
+  else {
+    if (+m.dc >= 0) { if (+m.dc > 0 && (j.dia === 'hoje' || m.dcValidade === 'amanha')) dc = +m.dc; }
+    else S.dc.alertas.forEach(a => { if (atinge(a, o) && sobrepoe(a, j)) dc = Math.max(dc, Math.min(5, +a.nivel || 0)); });
+    if (+m.inmet >= 0) inmet = +m.inmet;
+    else S.inmet.avisos.forEach(a => { if (atinge(a, o) && sobrepoe(a, j)) inmet = Math.max(inmet, a.sev); });
+    if (+m.cemaden > 0 && j.dia === 'hoje') cem = +m.cemaden;
+  }
+  const pa = c.probAlerta;
+  return { dc, inmet, cem, h: Math.max(H_DC[dc] || 0, H_INMET[inmet] || 0, H_CEM[cem] || 0), pOf: Math.max(pa.dc[dc] || 0, pa.inmet[inmet] || 0, pa.cemaden[cem] || 0) };
+}
+function valoresOrigem(j, i) {
+  if (S.sim.on) { const s = S.sim; return { int: +s.int, acc: +s.acc, ant: +s.ant, gust: +s.gust, pop: Math.min(100, 30 + 0.7 * s.pens) }; }
+  const f = S.fc && S.fc[i];
+  if (!f) return { int: 0, acc: 0, ant: 0, gust: 0, pop: 0 };
+  const iw = idxJan(f.tm, j.jIni, j.jFim), ii = idxInst(f.tm, j.jIni, j.jFim), est = estacoesDaOrigem(i);
+  const acc = chuvaPeriodo(f, j.jIni - 360, j.jFim, est), ant = chuvaPeriodo(f, j.jIni - 4320, j.jIni, est);
+  let int = maxIdx(f.p, iw);
+  const agora = paraMin(agoraLocal());
+  if (est.length && j.jIni <= agora && j.jFim > agora) { const u = chuvaMedida(est, 1); if (u !== null) int = Math.max(int, u); }
+  return { int, acc: acc.v, ant: ant.v, gust: maxIdx(f.g, ii), pop: maxIdx(f.pop, ii), medidaAcc: acc.medida, medidaAnt: ant.medida, medida: acc.medida || ant.medida, nEst: est.length };
+}
+function probMet(j, x0) {
+  const T = S.cfg.ensemble;
+  if (S.sim.on) return { p: clamp(+S.sim.pens / 100), fonte: 'simulação', accs: [] };
+  if (S.ens) {
+    const iAcc = idxJan(S.ens.tm, j.jIni - 360, j.jFim);
+    let k = 0, n = 0; const accs = [];
+    if (iAcc.length) for (const m of S.ens.membros) {
+      const acc = somaIdx(m.v, iAcc), h3 = max3h(S.ens.tm, m.v, j.jIni, j.jFim);
+      if (isNaN(acc) || isNaN(h3)) continue;
+      n++; const passa = acc >= T.acumuladoMM || h3 >= T.tresHorasMM; if (passa) k++;
+      accs.push({ acc, h3, passa });
+    }
+    if (n >= 5) return { p: (k + 0.5) / (n + 1), k, n, accs, fonte: 'ensemble' };
+  }
+  const z = Math.max(x0.acc / T.acumuladoMM, (x0.int * 2.2) / T.tresHorasMM);
+  return { p: clamp((x0.pop / 100) / (1 + Math.exp(-7 * (z - 0.85)))), fonte: 'aproximação', accs: [] };
+}
+
+/* ----- inferência fuzzy (Mamdani) ----- */
+const MF_IN = { b: [0, 0, 0.2, 0.45], m: [0.25, 0.5, 0.5, 0.75], a: [0.55, 0.8, 1, 1] };
+const MF_OUT = { manter: [0, 0, 15, 35], atencao: [20, 40, 40, 60], flex: [45, 62, 62, 80], susp: [65, 85, 100, 100] };
+const OUT_NOME = { manter: 'manter', atencao: 'atenção', flex: 'flexibilizar', susp: 'suspender' };
+function trap(x, p) { const a = p[0], b = p[1], c = p[2], d = p[3]; if (x < a || x > d) return 0; if (x < b) return (x - a) / (b - a); if (x <= c) return 1; return d === c ? 1 : (d - x) / (d - c); }
+const REGRAS = [
+  { txt: 'Chuva baixa e nenhum alerta oficial', out: 'manter', f: m => Math.min(m.chuva.b, m.alerta.b) },
+  { txt: 'Chuva média, solo pouco encharcado e sem alerta', out: 'atencao', f: m => Math.min(m.chuva.m, m.solo.b, m.alerta.b) },
+  { txt: 'Chuva média com solo encharcado', out: 'flex', f: m => Math.min(m.chuva.m, m.solo.a) },
+  { txt: 'Chuva alta com solo pouco encharcado', out: 'flex', f: m => Math.min(m.chuva.a, m.solo.b) },
+  { txt: 'Chuva alta com solo médio ou encharcado', out: 'susp', f: m => Math.min(m.chuva.a, Math.max(m.solo.m, m.solo.a)) },
+  { txt: 'Alerta oficial alto', out: 'susp', f: m => m.alerta.a },
+  { txt: 'Alerta oficial médio com chuva média ou alta', out: 'flex', f: m => Math.min(m.alerta.m, Math.max(m.chuva.m, m.chuva.a)) },
+  { txt: 'Alerta oficial médio com pouca chuva', out: 'atencao', f: m => Math.min(m.alerta.m, m.chuva.b) },
+  { txt: 'Solo encharcado mesmo com pouca chuva', out: 'atencao', f: m => Math.min(m.solo.a, m.chuva.b) },
+  { txt: 'Muitas áreas de risco ativadas e chuva média', out: 'flex', f: m => Math.min(m.expo.a, m.chuva.m) },
+  { txt: 'Muitas áreas de risco ativadas e chuva alta', out: 'susp', f: m => Math.min(m.expo.a, m.chuva.a) },
+  { txt: 'Solo e chuva médios, poucas áreas ativadas', out: 'atencao', f: m => Math.min(m.solo.m, m.chuva.m, m.expo.b) }
+];
+function fuzzy(ent) {
+  const m = {};
+  for (const k in ent) { const x = clamp(ent[k]); m[k] = { b: trap(x, MF_IN.b), m: trap(x, MF_IN.m), a: trap(x, MF_IN.a) }; }
+  const disparos = REGRAS.map(r => ({ txt: r.txt, out: r.out, w: r.f(m) }));
+  const forca = { manter: 0, atencao: 0, flex: 0, susp: 0 };
+  disparos.forEach(d => { forca[d.out] = Math.max(forca[d.out], d.w); });
+  let num = 0, den = 0;
+  for (let y = 0; y <= 100; y++) {
+    let mu = 0; for (const k in forca) mu = Math.max(mu, Math.min(forca[k], trap(y, MF_OUT[k])));
+    num += y * mu; den += mu;
+  }
+  const saida = den > 0 ? num / den : 0;
+  return { saida, nivel: saida < 30 ? 0 : saida < 47 ? 1 : saida < 64 ? 2 : 3, forca, disparos: disparos.filter(d => d.w > 0.01).sort((a, b) => b.w - a.w) };
+}
+
+function avaliar(j) {
+  const c = S.cfg, W = pesosNorm(), partes = partesNorm(), L = c.limiares;
+  const por = c.origens.map((o, i) => {
+    const x = valoresOrigem(j, i), A = alertaPara(j, o);
+    const h = { int: pw(x.int, L.intensidade), acc: pw(x.acc, L.acumulado), ant: pw(x.ant, L.antecedente), gust: pw(x.gust, L.vento), alerta: A.h };
+    const H = W.intensidade * h.int + W.acumulado * h.acc + W.antecedente * h.ant + W.vento * h.gust + W.alerta * h.alerta;
+    return { o, i, x, h, A, H };
+  });
+  const hReg = {};
+  ['int', 'acc', 'ant', 'gust', 'alerta'].forEach(k => { hReg[k] = por.reduce((s, r, i) => s + partes[i] * r.h[k], 0); });
+  const Hmed = por.reduce((s, r, i) => s + partes[i] * r.H, 0);
+  let iMax = 0; por.forEach((r, i) => { if (r.H > por[iMax].H) iMax = i; });
+  const Hreg = 0.7 * Hmed + 0.3 * por[iMax].H;
+  const areas = S.areas.map(a => {
+    const r = por[a.oi] || por[0];
+    const base = a.tipo === 'inund' ? 0.6 * r.h.int + 0.4 * r.h.acc : 0.6 * r.h.ant + 0.4 * r.h.acc;
+    return { a, at: clamp(base * (a.grau === 'muito alto' ? 1 : 0.8)) };
+  });
+  const ats = areas.map(x => x.at);
+  const E = ats.length ? 0.5 * (ats.reduce((s, v) => s + v, 0) / ats.length) + 0.5 * Math.max.apply(null, ats) : 0;
+  const ew = clamp((+c.pesoExposicao || 0) / 100);
+  const A = { dc: Math.max.apply(null, por.map(r => r.A.dc)), inmet: Math.max.apply(null, por.map(r => r.A.inmet)), cem: Math.max.apply(null, por.map(r => r.A.cem)), pOf: Math.max.apply(null, por.map(r => r.A.pOf)) };
+  let piso = 0, nPiso = 0;
+  if (c.respeitarPiso) {
+    if (A.dc >= 4 || A.inmet >= 3 || A.cem >= 3) { piso = 75; nPiso = 3; }
+    else if (A.dc >= 3 || A.inmet >= 2 || A.cem >= 2) { piso = 50; nPiso = 2; }
+    else if (A.dc >= 2 || A.inmet >= 1 || A.cem >= 1) { piso = 25; nPiso = 1; }
+  }
+  const ircBruto = 100 * clamp((1 - ew) * Hreg + ew * E);
+  const irc = Math.max(ircBruto, piso);
+  const pm = probMet(j, por[0].x);
+  const P = 1 - (1 - pm.p) * (1 - A.pOf);
+  const r = clamp(+c.custoPerda || 0.3, 0.01, 0.99);
+  const nIRC = nivelDe(irc / 100);
+  const nCL = P >= r ? 3 : P >= 0.8 * r ? 2 : P >= 0.5 * r ? 1 : 0;
+  const fz = fuzzy({ chuva: Math.max(hReg.int, hReg.acc), solo: hReg.ant, alerta: hReg.alerta, expo: E });
+  const ns = [nIRC, nCL, fz.nivel];
+  const cons = c.consolidacao === 'max' ? Math.max.apply(null, ns) : ns.slice().sort((a, b) => a - b)[1];
+  let nivel = Math.max(cons, nPiso);
+  if (nivel >= 3 && (A.dc >= 4 || A.inmet >= 3 || irc >= 85)) nivel = 4;
+  return { j, por, iMax, hReg, Hreg, E, ew, areas, A, piso, nPiso, ircBruto, irc, pm, P, r, nIRC, nCL, fz, cons, nivel, partes, W };
+}
+
+/* ================= textos ================= */
+function alertaTexto(A) {
+  const p = [];
+  if (A.dc > 0) p.push('alerta ' + DC_NOMES[A.dc].toLowerCase() + ' da Defesa Civil');
+  if (A.inmet > 0) p.push('aviso ' + INMET_NOMES[A.inmet].toLowerCase() + ' do INMET (' + INMET_DESC[A.inmet] + ')');
+  if (A.cem > 0) p.push('alerta ' + CEM_NOMES[A.cem].toLowerCase() + ' do CEMADEN');
+  return p;
+}
+function alertaCurto(A) {
+  const c = [];
+  if (A.dc > 0) c.push({ h: H_DC[A.dc], t: 'Defesa Civil ' + DC_NOMES[A.dc].toLowerCase() });
+  if (A.inmet > 0) c.push({ h: H_INMET[A.inmet], t: 'INMET ' + INMET_NOMES[A.inmet].toLowerCase() });
+  if (A.cem > 0) c.push({ h: H_CEM[A.cem], t: 'CEMADEN ' + CEM_NOMES[A.cem].toLowerCase() });
+  if (!c.length) return 'Nenhum';
+  c.sort((a, b) => b.h - a.h);
+  return esc(c[0].t) + (c.length > 1 ? ' <small>e mais ' + (c.length - 1) + '</small>' : '');
+}
+function juntar(l) { return l.length <= 1 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' e ' + l[l.length - 1]; }
+function pior(R, k) { let b = R.por[0]; R.por.forEach(r => { if (r.x[k] > b.x[k]) b = r; }); return b; }
+function fatoresOrdenados(R) {
+  const W = R.W, ew = R.ew, base = 1 - ew, mx = R.por[R.iMax];
+  const cont = k => 100 * base * W[k === 'int' ? 'intensidade' : k === 'acc' ? 'acumulado' : k === 'ant' ? 'antecedente' : k === 'gust' ? 'vento' : 'alerta'] * (0.7 * R.hReg[k] + 0.3 * mx.h[k]);
+  const f = [];
+  const al = alertaTexto(R.A);
+  if (al.length) f.push({ v: cont('alerta'), t: al.join(', ') });
+  let p = pior(R, 'int'); if (p.x.int >= 5) f.push({ v: cont('int'), t: 'chuva de até ' + fmt(p.x.int) + ' mm/h prevista em ' + p.o.nome });
+  p = pior(R, 'acc'); if (p.x.acc >= 15) f.push({ v: cont('acc'), t: fmt(p.x.acc) + ' mm previstos na janela do turno em ' + p.o.nome });
+  p = pior(R, 'ant'); if (p.x.ant >= 30) f.push({ v: cont('ant'), t: 'solo encharcado, com ' + fmt(p.x.ant) + ' mm nas 72 h anteriores em ' + p.o.nome });
+  p = pior(R, 'gust'); if (p.x.gust >= 45) f.push({ v: cont('gust'), t: 'rajadas de até ' + fmt(p.x.gust) + ' km/h em ' + p.o.nome });
+  const at = R.areas.filter(x => x.at >= 0.45).length;
+  if (at) f.push({ v: 100 * ew * R.E, t: at + (at > 1 ? ' áreas de risco com ativação elevada' : ' área de risco com ativação elevada') });
+  return f.filter(x => x.v > 1).sort((a, b) => b.v - a.v);
+}
+function explicar(R) {
+  const f = fatoresOrdenados(R).slice(0, 3);
+  if (!f.length) return 'Sem chuva relevante prevista e sem alertas oficiais para os municípios monitorados na janela do turno.';
+  return 'Pesam mais: ' + juntar(f.map(x => x.t)) + '.';
+}
+function motivoCurto(R) {
+  const f = fatoresOrdenados(R).slice(0, 2);
+  return f.length ? juntar(f.map(x => x.t)) : 'das condições meteorológicas previstas';
+}
+function textoComunicado(R) {
+  const j = R.j, n = R.nivel, turno = 'turno ' + j.t.nome.toLowerCase(), data = rotuloDia(j.data);
+  let corpo;
+  if (n <= 1) corpo = 'As atividades presenciais do ' + turno + ' de ' + data + ', estão mantidas. ' + (n === 1 ? 'A Direção acompanha a previsão de chuva e os alertas oficiais e divulgará novas orientações caso a situação mude.' : 'Não há indicação de risco relevante para o deslocamento neste período.');
+  else if (n === 2) corpo = 'As atividades presenciais do ' + turno + ' de ' + data + ', estão mantidas, com flexibilização, em razão de ' + motivoCurto(R) + '. Estudantes e servidores que não puderem se deslocar com segurança terão a ausência considerada justificada, e as coordenações de curso poderão oferecer atividades alternativas. Ninguém deve atravessar áreas alagadas ou circular por encostas durante a chuva.';
+  else if (n === 3) corpo = 'Estão suspensas as atividades presenciais do ' + turno + ' de ' + data + ', em razão de ' + motivoCurto(R) + '. A reposição será organizada pelas coordenações de curso.';
+  else corpo = 'Estão suspensas todas as atividades presenciais do câmpus em ' + data + ', em razão de ' + motivoCurto(R) + '. A reposição será organizada pelas coordenações de curso.';
+  const hoje = hojeStr();
+  return 'Comunicado da Direção-Geral do IFSC Câmpus São José\n\n' + corpo +
+    '\n\nEm situação de risco, siga as orientações da Defesa Civil (199) e do Corpo de Bombeiros (193). Para receber alertas da Defesa Civil por SMS, envie seu CEP para 40199.\n\nSão José, ' + hoje.slice(8, 10) + '/' + hoje.slice(5, 7) + '/' + hoje.slice(0, 4) + '.\nDireção-Geral do IFSC Câmpus São José';
+}
+
+/* ================= renderização ================= */
+function recalcular() {
+  S.janelas = montarJanelas();
+  if (!S.sel || !S.janelas.find(j => j.chave === S.sel)) S.sel = proximaJanela(S.janelas);
+  S.R = {}; S.janelas.forEach(j => { S.R[j.chave] = avaliar(j); });
+  renderTudo();
+}
+function renderTudo() {
+  const R = S.R[S.sel];
+  if (!R) return;
+  renderModo(); renderVeredito(R); renderGrade(); renderFatores(R); renderAlertas(); renderMapa(R);
+  renderGraficoChuva(); renderEnsemble(R); renderMetodos(R); renderComunicado(R); renderFontes(); renderLog();
+}
+function renderModo() {
+  const el = $('#aviso-modo'); const t = [];
+  if (DEMO) t.push('Modo demonstração: previsão, ensemble e alertas são sintéticos, gerados para mostrar o painel em um dia de chuva forte. Remova ?demo da URL para usar dados reais.');
+  if (S.sim.on) t.push('Simulação ativa: o índice usa os valores definidos em Configuração, iguais para todos os municípios.');
+  el.hidden = !t.length; el.textContent = t.join(' ');
+}
+function renderVeredito(R) {
+  const el = $('#veredito'), j = R.j;
+  $('#v-quando').textContent = 'Turno ' + j.t.nome.toLowerCase() + ' de ' + (j.dia === 'hoje' ? 'hoje' : 'amanhã') + ', ' + rotuloDia(j.data) + ', das ' + hhmm(j.t.ini) + ' às ' + hhmm(j.t.fim);
+  if (!temDados()) {
+    el.dataset.n = '';
+    $('#v-decisao').textContent = S.fcEstado === 'erro' ? 'Previsão indisponível' : 'Carregando previsão';
+    $('#v-porque').textContent = S.fcEstado === 'erro'
+      ? 'Não foi possível obter a previsão do Open-Meteo (' + S.fcErro + '). Tente Atualizar dados, ou ative a simulação em Configuração para testar cenários.'
+      : 'Buscando previsão, ensemble e alertas oficiais.';
+    $('#v-num').innerHTML = '';
+    return;
+  }
+  const N = NIVEIS[R.nivel];
+  el.dataset.n = R.nivel;
+  $('#v-decisao').innerHTML = '<span class="v-ico">' + ICO[N.ico] + '</span><span>' + esc(N.nome) + '</span>';
+  $('#v-porque').textContent = explicar(R) + ' ' + N.acao;
+  $('#v-num').innerHTML = [
+    ['Índice de risco (IRC)', fmt(R.irc) + '<small> de 100</small>'],
+    ['Probabilidade de evento', pct(R.P)],
+    ['Alerta oficial', alertaCurto(R.A)],
+    ['Chuva em 72 h', fmt(R.por[0].x.ant) + '<small> mm no câmpus' + (R.por[0].x.medidaAnt ? ', medido' : '') + '</small>']
+  ].map(p => '<div><dt>' + p[0] + '</dt><dd>' + p[1] + '</dd></div>').join('');
+}
+function renderGrade() {
+  const g = $('#grade'), agora = paraMin(agoraLocal());
+  let html = '<span></span>' + S.cfg.turnos.map(t => '<span class="col">' + esc(t.nome) + '</span>').join('');
+  ['hoje', 'amanha'].forEach(d => {
+    html += '<span class="rot">' + (d === 'hoje' ? 'Hoje' : 'Amanhã') + '</span>';
+    S.janelas.filter(j => j.dia === d).forEach(j => {
+      const R = S.R[j.chave], ok = temDados(), N = ok ? NIVEIS[R.nivel] : null;
+      html += '<button type="button" class="celula' + (j.fim <= agora ? ' passou' : '') + '" data-n="' + (ok ? R.nivel : '') + '" data-chave="' + j.chave + '" aria-pressed="' + (j.chave === S.sel) + '" aria-label="' + esc(j.t.nome + ' de ' + (d === 'hoje' ? 'hoje' : 'amanhã') + ': ' + (N ? N.nome : 'sem dados')) + '">' +
+        '<b>' + (N ? esc(N.curto) : 'Sem dados') + '</b><span>' + (ok ? 'IRC ' + fmt(R.irc) + ', P ' + pct(R.P) : hhmm(j.t.ini) + ' às ' + hhmm(j.t.fim)) + '</span></button>';
+    });
+  });
+  g.innerHTML = html;
+  $$('.celula', g).forEach(b => b.addEventListener('click', () => { S.sel = b.dataset.chave; renderTudo(); }));
+}
+function renderFatores(R) {
+  const box = $('#fatores');
+  if (!temDados()) { box.innerHTML = '<p class="vazio">Aguardando dados.</p>'; return; }
+  const W = R.W, base = 100 * (1 - R.ew), mx = R.por[R.iMax];
+  const linhas = [
+    ['Intensidade máxima', 'int', W.intensidade, () => { const p = pior(R, 'int'); return 'até ' + fmt(p.x.int, 1) + ' mm/h em ' + p.o.nome; }],
+    ['Acumulado na janela', 'acc', W.acumulado, () => { const p = pior(R, 'acc'); return 'até ' + fmt(p.x.acc) + ' mm em ' + p.o.nome + (p.x.medidaAcc ? ', com pluviômetros' : ''); }],
+    ['Chuva antecedente', 'ant', W.antecedente, () => { const p = pior(R, 'ant'); return fmt(p.x.ant) + ' mm em 72 h em ' + p.o.nome + (p.x.medidaAnt ? ', medido nos pluviômetros' : ''); }],
+    ['Rajadas de vento', 'gust', W.vento, () => { const p = pior(R, 'gust'); return 'até ' + fmt(p.x.gust) + ' km/h em ' + p.o.nome; }],
+    ['Alertas oficiais', 'alerta', W.alerta, () => { const t = alertaTexto(R.A); return t.length ? juntar(t) : 'nenhum alerta vigente'; }]
+  ];
+  let html = linhas.map(l => {
+    const nivel = 0.7 * R.hReg[l[1]] + 0.3 * mx.h[l[1]];
+    const pts = base * l[2] * nivel;
+    return '<div class="fator"><div class="nome">' + l[0] + '<small>' + esc(l[3]()) + '</small></div><div class="barra" title="Perigo normalizado: ' + fmt(nivel, 2) + '"><i style="width:' + (100 * nivel).toFixed(1) + '%"></i></div><div class="pts">' + fmt(pts) + '</div></div>';
+  }).join('');
+  const at = R.areas.filter(x => x.at >= 0.45).length;
+  html += '<div class="fator"><div class="nome">Exposição<small>' + at + ' de ' + R.areas.length + ' áreas com ativação elevada</small></div><div class="barra"><i style="width:' + (100 * R.E).toFixed(1) + '%"></i></div><div class="pts">' + fmt(100 * R.ew * R.E) + '</div></div>';
+  html += '<div class="fator total"><div class="nome">Índice do turno' + (R.irc > R.ircBruto + 0.5 ? '<small>O alerta oficial elevou o índice de ' + fmt(R.ircBruto) + ' para o piso de ' + fmt(R.piso) + '.</small>' : '') + '</div><div></div><div class="pts">' + fmt(R.irc) + '</div></div>';
+  box.innerHTML = html;
+}
+function periodo(a) {
+  const f = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) + ' ' + hhmm(s.slice(11, 16)) : '?';
+  return (a.ini || a.fim) ? 'de ' + f(a.ini) + ' a ' + f(a.fim) : 'período não informado';
+}
+const CORES_DC = ['#939598', '#939598', '#E2AE00', '#E0702A', '#C8191E', '#8E0F13'];
+const CORES_INMET = ['#939598', '#E2AE00', '#E0702A', '#C8191E'];
+function renderAlertas() {
+  const m = S.cfg.manual;
+  const ld = $('#lista-dc'), li = $('#lista-inmet'), lc = $('#lista-cem');
+  $('#dc-manual-extra').hidden = +m.dc < 0;
+  if (+m.dc >= 0) ld.innerHTML = '<p class="nota">Ajuste manual ativo: ' + DC_NOMES[+m.dc].toLowerCase() + '. Os alertas automáticos do IDAP estão sendo ignorados.</p>';
+  else if (S.dc.estado === 'ok' || S.dc.estado === 'demo') {
+    const rel = S.dc.alertas.filter(a => S.cfg.origens.some(o => atinge(a, o)));
+    const fora = S.dc.alertas.length - rel.length;
+    ld.innerHTML = rel.length
+      ? '<ul class="avisos">' + rel.map(a => '<li><span class="sev d' + a.nivel + '" title="Nível obtido por: ' + esc(a.nivel_origem || 'não informado') + '">' + DC_NOMES[a.nivel] + '</span>' + esc(a.titulo || a.evento) + '<br><small>' + (a.remetente ? esc(a.remetente) + '. ' : '') + periodo(a) + '. ' + esc(municipiosDoAlerta(a)) + '</small></li>').join('') + '</ul>'
+      : '<p class="nota">Nenhum alerta vigente da Defesa Civil para os municípios monitorados' + (fora > 0 ? ' (' + fora + (fora > 1 ? ' alertas próximos não atingem' : ' alerta próximo não atinge') + ' esses pontos)' : '') + '.</p>';
+  } else if (S.dc.estado === 'erro') ld.innerHTML = '<p class="nota erro">Alertas automáticos indisponíveis (' + esc(S.dc.erro || 'coletor não encontrado') + '). Confira em <a href="https://www.defesacivil.sc.gov.br/categoria/alerta/" target="_blank" rel="noopener">defesacivil.sc.gov.br</a> e use o ajuste manual.</p>';
+  else ld.innerHTML = '<p class="nota">Consultando.</p>';
+
+  if (+m.inmet >= 0) li.innerHTML = '<p class="nota">Nível informado manualmente: ' + INMET_NOMES[+m.inmet] + '.</p>';
+  else if (S.inmet.estado === 'ok' || S.inmet.estado === 'demo') {
+    const rel = S.inmet.avisos.filter(a => S.cfg.origens.some(o => atinge(a, o)));
+    li.innerHTML = rel.length
+      ? '<ul class="avisos">' + rel.map(a => '<li><span class="sev s' + a.sev + '">' + INMET_NOMES[a.sev] + '</span>' + esc(a.desc) + '<br><small>' + periodo(a) + '. ' + esc(a.munTxt || municipiosDoAlerta(a)) + '</small></li>').join('') + '</ul>'
+      : '<p class="nota">Nenhum aviso ativo para os municípios monitorados.</p>';
+  } else if (S.inmet.estado === 'erro') li.innerHTML = '<p class="nota erro">Consulta automática indisponível (' + esc(S.inmet.erro) + '). Confira em <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">alertas2.inmet.gov.br</a> e informe o nível acima.</p>';
+  else li.innerHTML = '<p class="nota">Consultando.</p>';
+
+  let h = '';
+  if (S.pluv.estado === 'ok' || S.pluv.estado === 'demo' || S.pluv.estado === 'manual') {
+    const grupos = {};
+    S.pluv.estacoes.forEach(e => { (grupos[e.municipio] = grupos[e.municipio] || []).push(e); });
+    const nomes = Object.keys(grupos);
+    h = nomes.length
+      ? '<ul class="avisos">' + nomes.map(n => { const g = grupos[n], c24 = chuvaMedida(g, 24), c72 = chuvaMedida(g, 72); return '<li><b>' + esc(n) + '</b>: ' + g.length + (g.length > 1 ? ' pluviômetros' : ' pluviômetro') + ', ' + (c24 === null ? 's/d' : fmt(c24)) + ' mm em 24 h' + (c72 === null ? '' : ', ' + fmt(c72) + ' mm em 72 h') + ' <small>(mediana)</small></li>'; }).join('') + '</ul>' +
+        '<p class="nota">' + (S.pluv.estado === 'manual' ? 'Dados importados de ' + esc(S.pluv.arquivo) + '; a próxima coleta automática bem-sucedida substitui estes valores. ' : '') + (S.cfg.usarPluviometros ? 'A chuva medida substitui a estimativa do modelo nas horas que já passaram.' : 'Uso da chuva medida desligado em Configuração.') + '</p>'
+      : '<p class="nota">Nenhum pluviômetro com dados recentes nos municípios monitorados.</p>';
+  } else if (S.pluv.estado === 'erro') h = '<p class="nota erro">Pluviômetros indisponíveis (' + esc(S.pluv.erro || 'sem dados') + '). A chuva das horas passadas vem do modelo meteorológico.</p>';
+  else h = '<p class="nota">Consultando pluviômetros.</p>';
+  if (+m.cemaden > 0) h += '<p class="nota">Alerta do CEMADEN informado manualmente: ' + CEM_NOMES[+m.cemaden].toLowerCase() + ' (vale para hoje).</p>';
+  lc.innerHTML = h;
+}
+function idadeTxt(min) { return min < 60 ? 'há ' + Math.max(0, Math.round(min)) + ' min' : 'há ' + fmt(min / 60, 1) + ' h'; }
+function renderFontes() {
+  const m = S.cfg.manual;
+  const est = (e, ok, erro) => e === 'ok' ? ['ok', ok] : e === 'demo' ? ['man', 'sintético'] : e === 'erro' ? ['erro', erro] : ['', 'consultando'];
+  const conta = (n, um, varios) => n + ' ' + (n === 1 ? um : varios);
+  const relDC = S.dc.alertas.filter(a => S.cfg.origens.some(o => atinge(a, o))).length;
+  const relIN = S.inmet.avisos.filter(a => S.cfg.origens.some(o => atinge(a, o))).length;
+  const col = S.coletor;
+  const itens = [
+    ['Previsão'].concat(est(S.fcEstado, 'ok', 'falhou')),
+    ['Ensemble'].concat(est(S.ensEstado, S.ens ? conta(S.ens.membros.length, 'membro', 'membros') : 'ok', 'indisponível')),
+    ['Defesa Civil'].concat(+m.dc >= 0 ? ['man', 'ajuste manual'] : est(S.dc.estado, conta(relDC, 'alerta', 'alertas'), 'indisponível')),
+    ['INMET'].concat(+m.inmet >= 0 ? ['man', 'ajuste manual'] : est(S.inmet.estado, conta(relIN, 'aviso', 'avisos'), 'indisponível')),
+    ['Pluviômetros'].concat(S.pluv.estado === 'manual' ? ['man', conta(S.pluv.estacoes.length, 'estação', 'estações') + ' de arquivo'] : est(S.pluv.estado, conta(S.pluv.estacoes.length, 'estação', 'estações'), 'indisponíveis')),
+    ['Coletor'].concat(DEMO ? ['man', 'sintético'] : !col ? ['', 'consultando'] : col.estado === 'ok' ? [col.idade > IDADE_AVISO_COLETOR ? 'erro' : 'ok', (col.idade > IDADE_AVISO_COLETOR ? 'desatualizado, ' : '') + idadeTxt(col.idade)] : ['erro', 'não encontrado'])
+  ];
+  $('#fontes').innerHTML = itens.map(i => '<span class="fonte ' + i[1] + '"' + (i[0] === 'Coletor' && col && col.erro ? ' title="' + esc(col.erro) + '"' : '') + '>' + i[0] + ': ' + esc(i[2]) + '</span>').join('');
+  $('#atualizado').textContent = S.carregando ? 'Atualizando dados' : S.atualizado ? 'Atualizado em ' + S.atualizado.slice(8, 10) + '/' + S.atualizado.slice(5, 7) + ' às ' + hhmm(S.atualizado.slice(11, 16)) + ' (horário de Brasília)' : 'Buscando dados';
+}
+
+/* ----- mapa ----- */
+function corArea(at) { return at < 0.25 ? '#939598' : NIVEIS[nivelDe(at)].cor; }
+function camadaBase() {
+  const k = (S.cfg.cartoKey || '').trim();
+  if (k) return L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=' + encodeURIComponent(k), { maxZoom: 19, attribution: '&copy; colaboradores do OpenStreetMap &copy; CARTO' });
+  return L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 16, attribution: 'Esri, HERE, Garmin, &copy; colaboradores do OpenStreetMap' }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 16 })
+  ]);
+}
+function iniciarMapa() {
+  if (!window.L) { $('#mapa').innerHTML = '<p class="mapa-erro">O mapa não carregou porque a biblioteca Leaflet não está disponível. O índice e as recomendações continuam funcionando.</p>'; return; }
+  const m = L.map('mapa', { scrollWheelZoom: false }).setView([-27.585, -48.635], 11);
+  S.camadas.base = camadaBase().addTo(m);
+  S.camadas.oficiais = L.layerGroup().addTo(m);
+  S.camadas.areas = L.layerGroup().addTo(m);
+  S.camadas.pluv = L.layerGroup().addTo(m);
+  S.camadas.origens = L.layerGroup().addTo(m);
+  S.camadas.campus = L.layerGroup().addTo(m);
+  const leg = L.control({ position: 'bottomleft' });
+  leg.onAdd = () => {
+    const d = L.DomUtil.create('div', 'legenda');
+    const tri = c => '<svg viewBox="0 0 20 20"><path d="M10 2L19 18H1z" fill="' + c + '" stroke="#000" stroke-width="1.4"/></svg>';
+    const gota = c => '<svg viewBox="0 0 20 20"><path d="M10 1.5C10 1.5 3.5 9 3.5 12.6a6.5 6.5 0 0013 0C16.5 9 10 1.5 10 1.5z" fill="' + c + '" stroke="#000" stroke-width="1.4"/></svg>';
+    d.innerHTML = '<details' + (window.innerWidth > 700 ? ' open' : '') + '><summary>Legenda</summary><b>Áreas de risco</b>' + tri('#fff') + 'Deslizamento<br>' + gota('#fff') + 'Inundação<br>' +
+      '<b style="margin-top:6px">Ativação no turno</b><i style="background:#939598"></i>Baixa<br><i style="background:' + NIVEIS[1].cor + '"></i>Atenção<br><i style="background:' + NIVEIS[2].cor + '"></i>Flexibilizar<br><i style="background:' + NIVEIS[3].cor + '"></i>Suspender' +
+      '<b style="margin-top:6px">Outras camadas</b><i style="background:transparent;border:2px dashed #C8191E"></i>Alerta oficial no turno<br><i style="background:#2A78D6;border-color:#fff;box-shadow:0 0 0 1px #000"></i>Pluviômetro (cor pela chuva em 24 h)</details>';
+    L.DomEvent.disableClickPropagation(d);
+    return d;
+  };
+  leg.addTo(m);
+  m.on('click', () => m.scrollWheelZoom.enable());
+  m.on('mouseout', () => m.scrollWheelZoom.disable());
+  S.mapa = m;
+}
+function trocarBase() { if (!S.mapa) return; S.mapa.removeLayer(S.camadas.base); S.camadas.base = camadaBase().addTo(S.mapa); }
+function iconeArea(tipo, cor) {
+  const svg = tipo === 'inund'
+    ? '<svg viewBox="0 0 20 20"><path d="M10 1.5C10 1.5 3.5 9 3.5 12.6a6.5 6.5 0 0013 0C16.5 9 10 1.5 10 1.5z" fill="' + cor + '" stroke="#000" stroke-width="1.3"/></svg>'
+    : '<svg viewBox="0 0 20 20"><path d="M10 2L19 18H1z" fill="' + cor + '" stroke="#000" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+  return L.divIcon({ className: 'mk-area', html: svg, iconSize: [20, 20], iconAnchor: [10, 12], popupAnchor: [0, -10] });
+}
+function renderMapa(R) {
+  if (!S.mapa) return;
+  const ok = temDados();
+  S.camadas.areas.clearLayers(); S.camadas.origens.clearLayers(); S.camadas.campus.clearLayers(); S.camadas.oficiais.clearLayers(); S.camadas.pluv.clearLayers();
+  const m = S.cfg.manual;
+  const oficiais = (+m.dc >= 0 ? [] : S.dc.alertas).concat(+m.inmet >= 0 ? [] : S.inmet.avisos);
+  oficiais.forEach(a => {
+    if (!sobrepoe(a, R.j) || !(a.poligonos || []).length) return;
+    const inmet = a.fonte === 'INMET' || a.sev !== undefined;
+    const cor = inmet ? CORES_INMET[a.sev] || '#939598' : CORES_DC[Math.min(5, +a.nivel || 0)];
+    const rot = inmet ? 'INMET, aviso ' + INMET_NOMES[a.sev].toLowerCase() : (a.fonte || 'Defesa Civil') + ', nível ' + DC_NOMES[Math.min(5, +a.nivel || 0)].toLowerCase();
+    const pop = '<b>' + esc(a.titulo || a.desc || a.evento) + '</b><br>' + esc(rot) + (a.remetente ? '<br>' + esc(a.remetente) : '') + '<br>' + periodo(a);
+    a.poligonos.forEach(p => { if (p.length > 2) L.polygon(p, { color: cor, weight: 2, dashArray: '6 4', fillColor: cor, fillOpacity: 0.07 }).bindPopup(pop).addTo(S.camadas.oficiais); });
+  });
+  S.pluv.estacoes.forEach(e => {
+    if (e.lat === null || e.lat === undefined || e.lon === null || e.lon === undefined) return;
+    const c24 = interpAcc(e.acc, 24), c72 = interpAcc(e.acc, 72);
+    const cor = c24 === null ? '#CFD2D3' : c24 < 5 ? '#CDE2FB' : c24 < 20 ? '#86B6EF' : c24 < 50 ? '#2A78D6' : '#104281';
+    const ic = L.divIcon({ className: '', html: '<div class="mk-pluv" style="background:' + cor + '"></div>', iconSize: [11, 11], iconAnchor: [6, 6] });
+    L.marker([+e.lat, +e.lon], { icon: ic, title: e.nome || 'Pluviômetro' }).bindTooltip(esc((e.nome || 'Pluviômetro') + ' (' + e.municipio + '): ' + (c24 === null ? 's/d' : fmt(c24, 1) + ' mm em 24 h') + (c72 === null ? '' : ', ' + fmt(c72) + ' mm em 72 h'))).addTo(S.camadas.pluv);
+  });
+  R.areas.forEach(x => {
+    const a = x.a, cor = ok ? corArea(x.at) : '#939598';
+    const pop = '<b>' + esc(a.nome) + '</b><br>' + (a.mun ? esc(a.mun) + '<br>' : '') + (a.tipo === 'inund' ? 'Inundação' : 'Deslizamento') + ', risco ' + esc(a.grau) +
+      (ok ? '<br>Ativação no turno: ' + fmt(100 * x.at) + ' de 100' : '') + '<br><small>' + esc(a.fonte || '') + '</small>';
+    if (a.geom && a.geom.type && a.geom.type !== 'Point') {
+      L.geoJSON(a.geom, { style: { color: '#000', weight: 1, fillColor: cor, fillOpacity: 0.55 } }).bindPopup(pop).addTo(S.camadas.areas);
+    } else {
+      L.marker([a.lat, a.lon], { icon: iconeArea(a.tipo, cor), keyboard: true, title: a.nome }).bindPopup(pop).addTo(S.camadas.areas);
+    }
+  });
+  R.por.forEach(r => {
+    const n = nivelDe(r.H), cor = ok ? NIVEIS[n].cor : '#939598';
+    const pop = '<b>' + esc(r.o.nome) + '</b><br>Parcela dos estudantes: ' + pct(R.partes[r.i]) +
+      (ok ? '<br>Chuva máx.: ' + fmt(r.x.int, 1) + ' mm/h<br>Acumulado na janela: ' + fmt(r.x.acc) + ' mm<br>Antecedente 72 h: ' + fmt(r.x.ant) + ' mm<br>Rajada máx.: ' + fmt(r.x.gust) + ' km/h<br>Perigo local: ' + fmt(100 * r.H) + ' de 100 (' + NIVEIS[n].curto.toLowerCase() + ')' : '');
+    if (r.i === 0) return;
+    L.circleMarker([+r.o.lat, +r.o.lon], { radius: 7 + 26 * Math.sqrt(R.partes[r.i]), color: '#000', weight: 1.2, fillColor: cor, fillOpacity: 0.35 }).bindPopup(pop).bindTooltip(esc(r.o.nome), { direction: 'top' }).addTo(S.camadas.origens);
+  });
+  const c = S.cfg.campus, r0 = R.por[0];
+  const ic = L.divIcon({ className: '', html: '<div class="mk-campus"></div><span class="mk-rot">IFSC SJ</span>', iconSize: [18, 18], iconAnchor: [9, 9] });
+  L.marker([c.lat, c.lon], { icon: ic, title: c.nome, zIndexOffset: 1000 }).bindPopup('<b>' + esc(c.nome) + '</b><br>Rua José Lino Kretzer, 608, Praia Comprida' +
+    (ok ? '<br>Chuva máx. na janela: ' + fmt(r0.x.int, 1) + ' mm/h<br>Acumulado na janela: ' + fmt(r0.x.acc) + ' mm<br>Perigo local: ' + fmt(100 * r0.H) + ' de 100' : '')).addTo(S.camadas.campus);
+  const info = S.areasFonte === 'base'
+    ? 'Base inicial com ' + S.areas.length + ' áreas em posições aproximadas, a partir de pontos citados pela Defesa Civil de São José e de estudo da bacia do rio Forquilhas. Também citadas, ainda sem posição no mapa: ' + juntar(AREAS_SEM_POSICAO) + '. Para uso oficial, importe a setorização do SGB em Configuração.'
+    : S.areas.length + ' áreas carregadas de arquivo importado.';
+  $('#nota-areas').textContent = info; $('#areas-info').textContent = info;
+}
+
+/* ----- gráfico de chuva ----- */
+function renderGraficoChuva() {
+  const box = $('#g-chuva');
+  const sel = $('#g-origem');
+  if (sel.options.length !== S.cfg.origens.length) {
+    sel.innerHTML = S.cfg.origens.map((o, i) => '<option value="' + i + '">' + esc(o.nome) + (i === 0 ? ' (câmpus)' : '') + '</option>').join('');
+  }
+  if (S.origemGrafico >= S.cfg.origens.length) S.origemGrafico = 0;
+  sel.value = String(S.origemGrafico);
+  if (S.sim.on) { box.innerHTML = '<p class="vazio">Sem gráfico no modo simulação: os valores simulados são constantes na janela.</p>'; return; }
+  const f = S.fc && S.fc[S.origemGrafico];
+  if (!f) { box.innerHTML = '<p class="vazio">Aguardando a previsão.</p>'; return; }
+  const agora = paraMin(agoraLocal()), a = agora - 72 * 60, b = agora + 48 * 60;
+  const idx = []; for (let k = 0; k < f.tm.length; k++) if (f.tm[k] > a && f.tm[k] <= b) idx.push(k);
+  const Wd = Math.max(340, Math.round(box.clientWidth || 800)), Hd = 240, ml = 40, mr = 14, mt = 24, mb = 32, pw_ = Wd - ml - mr, ph = Hd - mt - mb;
+  const x = m => ml + (m - a) / (b - a) * pw_;
+  const vmax = idx.reduce((s, k) => Math.max(s, f.p[k]), 0);
+  let ymax = Math.max(6, vmax * 1.15);
+  const passo = ymax <= 10 ? 2 : ymax <= 25 ? 5 : ymax <= 60 ? 10 : 20;
+  ymax = Math.ceil(ymax / passo) * passo;
+  const y = v => mt + ph - (v / ymax) * ph;
+  const bw = Math.max(1, pw_ / ((b - a) / 60) - 1.5);
+  const sNome = esc(S.cfg.origens[S.origemGrafico].nome);
+  let s = '<svg viewBox="0 0 ' + Wd + ' ' + Hd + '" width="' + Wd + '" height="' + Hd + '" role="img" aria-label="Chuva por hora em ' + sNome + ' nas 72 horas anteriores e 48 seguintes">';
+  S.janelas.forEach(j => {
+    if (j.fim < a || j.ini > b) return;
+    const x0 = x(Math.max(j.ini, a)), x1 = x(Math.min(j.fim, b)), on = j.chave === S.sel;
+    s += '<rect x="' + x0.toFixed(1) + '" y="' + mt + '" width="' + (x1 - x0).toFixed(1) + '" height="' + ph + '" fill="' + (on ? '#DCEFDF' : '#EFF7F0') + '"' + (on ? ' stroke="#1D7A2D" stroke-width="1.5"' : '') + '/>';
+    s += '<text x="' + ((x0 + x1) / 2).toFixed(1) + '" y="' + (mt - 8) + '" text-anchor="middle" class="g-rot">' + j.t.id + '</text>';
+  });
+  for (let v = 0; v <= ymax + 1e-9; v += passo) s += '<line x1="' + ml + '" x2="' + (Wd - mr) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="#E3E5E4"/><text x="' + (ml - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end" class="g-eixo">' + v + '</text>';
+  s += '<text x="4" y="' + (mt - 8) + '" class="g-eixo">mm/h</text>';
+  [[20, '20 mm/h, faixa do aviso amarelo'], [30, '30 mm/h, faixa do aviso laranja'], [60, '60 mm/h, faixa do aviso vermelho']].forEach(t => {
+    if (t[0] <= ymax) { const yl = y(t[0]) - 5 < mt + 12 ? y(t[0]) + 13 : y(t[0]) - 5; s += '<line x1="' + ml + '" x2="' + (Wd - mr) + '" y1="' + y(t[0]).toFixed(1) + '" y2="' + y(t[0]).toFixed(1) + '" stroke="#4D5155" stroke-dasharray="4 4"/><text x="' + (Wd - mr - 4) + '" y="' + yl.toFixed(1) + '" text-anchor="end" class="g-ref">' + t[1] + '</text>'; }
+  });
+  idx.forEach(k => {
+    const v = f.p[k]; if (!(v > 0)) return;
+    const xc = x(f.tm[k] - 30);
+    s += '<rect x="' + (xc - bw / 2).toFixed(1) + '" y="' + y(v).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.6, y(0) - y(v)).toFixed(1) + '" fill="' + (f.tm[k] <= agora ? '#86B6EF' : '#2A78D6') + '" rx="1"/>';
+  });
+  s += '<line x1="' + ml + '" x2="' + (Wd - mr) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="#B9BDBF"/>';
+  for (let d = -3; d <= 2; d++) {
+    const dd = somaDias(hojeStr(), d), m0 = paraMin(dd + 'T00:00'), m12 = m0 + 720;
+    if (m0 > a && m0 < b) s += '<line x1="' + x(m0).toFixed(1) + '" x2="' + x(m0).toFixed(1) + '" y1="' + mt + '" y2="' + (y(0) + 6) + '" stroke="#B9BDBF"/>';
+    if (m12 > a + 120 && m12 < b - 120) s += '<text x="' + x(m12).toFixed(1) + '" y="' + (Hd - 10) + '" text-anchor="middle" class="g-eixo">' + rotuloCurto(dd) + '</text>';
+  }
+  s += '<line x1="' + x(agora).toFixed(1) + '" x2="' + x(agora).toFixed(1) + '" y1="' + mt + '" y2="' + y(0) + '" stroke="#000" stroke-width="1.5"/><text x="' + (x(agora) + 4).toFixed(1) + '" y="' + (mt + 12) + '" class="g-ref">agora</text>';
+  s += '<line class="g-cruz" x1="0" x2="0" y1="' + mt + '" y2="' + y(0) + '" stroke="#000" stroke-dasharray="2 3" visibility="hidden"/>';
+  s += '<rect x="' + ml + '" y="' + mt + '" width="' + pw_ + '" height="' + ph + '" fill="transparent"/></svg><div class="tip"></div>';
+  box.innerHTML = s;
+  const svg = box.querySelector('svg'), tip = box.querySelector('.tip'), cruz = box.querySelector('.g-cruz');
+  const mover = ev => {
+    const rc = svg.getBoundingClientRect(), esc_ = Wd / rc.width, px = (ev.clientX - rc.left) * esc_;
+    const m = a + (px - ml) / pw_ * (b - a);
+    let best = -1, bd = Infinity; idx.forEach(k => { const d = Math.abs(f.tm[k] - 30 - m); if (d < bd) { bd = d; best = k; } });
+    if (best < 0 || px < ml || px > Wd - mr) { tip.style.display = 'none'; cruz.setAttribute('visibility', 'hidden'); return; }
+    const xc = x(f.tm[best] - 30);
+    cruz.setAttribute('x1', xc); cruz.setAttribute('x2', xc); cruz.setAttribute('visibility', 'visible');
+    tip.innerHTML = '<b>' + rotuloHora(f.tm[best]) + '</b><br>' + fmt(f.p[best], 1) + ' mm na hora' + (f.tm[best] > agora && f.pop.length ? '<br>Probabilidade de chuva: ' + fmt(f.pop[best]) + '%' : '') + (f.g.length ? '<br>Rajada: ' + fmt(f.g[best]) + ' km/h' : '');
+    tip.style.display = 'block';
+    const left = xc / esc_, w = tip.offsetWidth;
+    tip.style.left = (left + 12 + w > rc.width ? left - w - 12 : left + 12) + 'px'; tip.style.top = '6px';
+  };
+  svg.addEventListener('mousemove', mover);
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; cruz.setAttribute('visibility', 'hidden'); });
+}
+
+/* ----- distribuição do ensemble ----- */
+function quantil(arr, q) { const s = arr.slice().sort((a, b) => a - b); if (!s.length) return NaN; const p = (s.length - 1) * q, i = Math.floor(p); return s[i] + (s[Math.min(i + 1, s.length - 1)] - s[i]) * (p - i); }
+function renderEnsemble(R) {
+  const box = $('#g-ens'), txt = $('#ens-txt'), pm = R.pm, T = S.cfg.ensemble;
+  if (!temDados()) { box.innerHTML = ''; txt.textContent = 'Aguardando dados.'; return; }
+  if (pm.fonte !== 'ensemble') {
+    box.innerHTML = '';
+    txt.textContent = pm.fonte === 'simulação'
+      ? 'Probabilidade meteorológica definida na simulação: ' + pct(pm.p) + '.'
+      : 'Ensemble indisponível (' + (S.ensErro || 'sem membros válidos para a janela') + '). Probabilidade meteorológica aproximada pela previsão determinística: ' + pct(pm.p) + '. Leia como indicação grosseira.';
+    return;
+  }
+  const accs = pm.accs.map(a => a.acc);
+  txt.textContent = pm.k + ' de ' + pm.n + ' membros (' + S.ens.modelos.replace(/,/g, ', ') + ') passam de ' + T.acumuladoMM + ' mm acumulados na janela do turno selecionado (6 h antes do deslocamento até o fim das aulas) ou de ' + T.tresHorasMM + ' mm em 3 h. Probabilidade meteorológica: ' + pct(pm.p) + '. Mediana do acumulado na janela: ' + fmt(quantil(accs, 0.5)) + ' mm; 80% dos membros ficam entre ' + fmt(quantil(accs, 0.1)) + ' e ' + fmt(quantil(accs, 0.9)) + ' mm.';
+  const Wd = Math.max(340, Math.round(box.clientWidth || 800)), ml = 40, mr = 14, pw_ = Wd - ml - mr;
+  const xmax = Math.max(T.acumuladoMM * 1.4, Math.max.apply(null, accs) * 1.08, 10);
+  const nb = Math.max(20, Math.floor(pw_ / 10)), larg = pw_ / nb, pilhas = new Array(nb).fill(0);
+  const pts = pm.accs.slice().sort((a, b) => a.acc - b.acc).map(a => { const bi = Math.min(nb - 1, Math.floor(a.acc / xmax * nb)); const nivel = pilhas[bi]++; return { a, bi, nivel }; });
+  const maxP = Math.max.apply(null, pilhas), passoY = Math.min(10, 120 / Math.max(1, maxP));
+  const Hd = Math.round(46 + maxP * passoY), base = Hd - 30;
+  const x = v => ml + v / xmax * pw_;
+  let s = '<svg viewBox="0 0 ' + Wd + ' ' + Hd + '" width="' + Wd + '" height="' + Hd + '" role="img" aria-label="Acumulado na janela do turno para cada membro do ensemble">';
+  s += '<line x1="' + ml + '" x2="' + (Wd - mr) + '" y1="' + base + '" y2="' + base + '" stroke="#B9BDBF"/>';
+  const passoX = xmax <= 40 ? 10 : xmax <= 120 ? 20 : 50;
+  for (let v = 0; v <= xmax; v += passoX) if (x(v) < Wd - mr - 80) s += '<line x1="' + x(v).toFixed(1) + '" x2="' + x(v).toFixed(1) + '" y1="' + base + '" y2="' + (base + 5) + '" stroke="#B9BDBF"/><text x="' + x(v).toFixed(1) + '" y="' + (base + 18) + '" text-anchor="middle" class="g-eixo">' + v + '</text>';
+  s += '<text x="' + (Wd - mr) + '" y="' + (base + 18) + '" text-anchor="end" class="g-eixo">mm na janela</text>';
+  s += '<line x1="' + x(T.acumuladoMM).toFixed(1) + '" x2="' + x(T.acumuladoMM).toFixed(1) + '" y1="8" y2="' + base + '" stroke="#000" stroke-dasharray="4 3"/><text x="' + (x(T.acumuladoMM) + 5).toFixed(1) + '" y="16" class="g-ref">limiar de ' + T.acumuladoMM + ' mm</text>';
+  pts.forEach(p => {
+    const cx = ml + (p.bi + 0.5) * larg, cy = base - 6 - p.nivel * passoY;
+    s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + Math.min(4.2, passoY / 2 + 0.2).toFixed(1) + '" fill="' + (p.a.passa ? '#1C5CAB' : '#B7D3F6') + '" stroke="#fff" stroke-width="1"><title>' + fmt(p.a.acc, 1) + ' mm na janela, pico de 3 h com ' + fmt(p.a.h3, 1) + ' mm' + (p.a.passa ? ' (passa do limiar)' : '') + '</title></circle>';
+  });
+  s += '</svg><p class="nota"><svg width="10" height="10" style="vertical-align:0"><circle cx="5" cy="5" r="4.5" fill="#1C5CAB"/></svg> passa do limiar da janela ou de 3 h &nbsp; <svg width="10" height="10" style="vertical-align:0"><circle cx="5" cy="5" r="4.5" fill="#B7D3F6"/></svg> fica abaixo. Cada ponto é um membro; passe o cursor para ver o valor.</p>';
+  box.innerHTML = s;
+}
+
+/* ----- métodos ----- */
+function escalaHTML(valor, cortes, rotulos, cores, extra) {
+  const segs = cortes.slice(1).map((c, i) => '<div class="seg" style="width:' + (c - cortes[i]) + '%;background:' + cores[i][1] + ';border-top-color:' + cores[i][0] + '"></div>').join('');
+  const rots = cortes.slice(1).map((c, i) => '<span style="width:' + (c - cortes[i]) + '%">' + rotulos[i] + '</span>').join('');
+  return '<div class="escala" role="img" aria-label="Valor ' + fmt(valor) + ' de 100">' + segs + (extra || '') + '<span class="marc" style="left:' + clamp(valor, 0, 100) + '%"><span>' + fmt(valor) + '</span></span></div><div class="escala-rot">' + rots + '</div>';
+}
+const CORES_N = [['#32A041', '#EAF5EC'], ['#E2AE00', '#FFF6D6'], ['#E0702A', '#FDEADC'], ['#C8191E', '#FBE3E3'], ['#8E0F13', '#F5CFD0']];
+function renderMetodos(R) {
+  const box = $('#metodos'), cons = $('#consenso');
+  if (!temDados()) { box.innerHTML = '<p class="vazio">Aguardando dados.</p>'; cons.textContent = ''; return; }
+  const c1 = '<div class="metodo"><h3>Índice ponderado</h3><p class="res">' + esc(NIVEIS[R.nIRC].nome) + '</p>' +
+    escalaHTML(R.irc, [0, 25, 45, 65, 80, 100], ['Manter', 'Atenção', 'Flexib.', 'Suspender', 'Tudo'], CORES_N) +
+    '<p>Soma ponderada dos perigos de chuva, solo, vento e alertas, com peso para o município de onde vem cada parcela de estudantes e para as áreas de risco ativadas.' + (R.irc > R.ircBruto + 0.5 ? ' O alerta oficial elevou o índice ao piso de ' + fmt(R.piso) + '.' : '') + '</p></div>';
+  const lim = '<span class="lim" style="left:' + (100 * R.r).toFixed(1) + '%" title="C/L"></span>';
+  const c2 = '<div class="metodo"><h3>Probabilidade e custo-perda</h3><p class="res">' + esc(NIVEIS[R.nCL].nome) + '</p>' +
+    escalaHTML(100 * R.P, [0, 50 * R.r, 80 * R.r, 100 * R.r, 100], ['', '', '', 'Suspender'], [['#C9CDCF', '#F1F2F2'], ['#C9CDCF', '#F1F2F2'], ['#C9CDCF', '#F1F2F2'], ['#C8191E', '#FBE3E3']], lim) +
+    '<p>P = ' + pct(R.P) + ' combina os modelos (' + pct(R.pm.p) + ') com o alerta oficial (' + pct(R.A.pOf) + '). Com C/L = ' + fmt(R.r, 2) + ', o custo esperado de manter é ' + fmt(R.P, 2) + ' L e o de suspender é ' + fmt(R.r, 2) + ' L: ' + (R.P >= R.r ? 'suspender sai mais barato.' : 'manter sai mais barato.') + '</p></div>';
+  const regras = R.fz.disparos.slice(0, 4).map(d => '<li><span>' + esc(d.txt) + ' <small>(' + OUT_NOME[d.out] + ')</small></span><span class="barra" title="Força ' + fmt(d.w, 2) + '"><i style="width:' + (100 * d.w).toFixed(0) + '%"></i></span></li>').join('');
+  const c3 = '<div class="metodo"><h3>Inteligência artificial (fuzzy)</h3><p class="res">' + esc(NIVEIS[R.fz.nivel].nome) + '</p>' +
+    escalaHTML(R.fz.saida, [0, 30, 47, 64, 100], ['Manter', 'Atenção', 'Flexib.', 'Suspender'], CORES_N) +
+    '<p>Grau de suspensão ' + fmt(R.fz.saida) + ' de 100, calculado por inferência fuzzy. Regras que mais pesaram:</p><ul class="regras">' + regras + '</ul></div>';
+  box.innerHTML = c1 + c2 + c3;
+  const nomeCons = S.cfg.consolidacao === 'max' ? 'o mais cauteloso dos três' : 'a mediana dos três';
+  let t = 'Índice: ' + NIVEIS[R.nIRC].nome.toLowerCase() + '. Custo-perda: ' + NIVEIS[R.nCL].nome.toLowerCase() + '. Fuzzy: ' + NIVEIS[R.fz.nivel].nome.toLowerCase() + '. Recomendação final, usando ' + nomeCons + ': ' + NIVEIS[R.nivel].nome.toLowerCase() + '.';
+  if (R.nPiso > R.cons) t += ' O alerta oficial elevou a recomendação para ' + NIVEIS[R.nPiso].nome.toLowerCase() + '.';
+  if (R.nivel === 4) t += ' A severidade do alerta ou do índice estende a suspensão a todas as atividades presenciais.';
+  cons.textContent = t;
+}
+function renderComunicado(R) {
+  const ta = $('#comunicado');
+  if (ta.dataset.editado === S.sel) return;
+  ta.value = temDados() ? textoComunicado(R) : '';
+}
+
+/* ----- registro ----- */
+function lerLog() { try { return JSON.parse(localStorage.getItem(CHAVE_LOG) || '[]'); } catch (e) { return []; } }
+function gravarLog(l) { try { localStorage.setItem(CHAVE_LOG, JSON.stringify(l)); } catch (e) {} }
+function renderLog() {
+  const l = lerLog(), box = $('#log');
+  if (!l.length) { box.innerHTML = '<p class="nota">Nenhuma decisão registrada neste navegador.</p>'; return; }
+  box.innerHTML = '<table class="log"><thead><tr><th>Registrado</th><th>Turno</th><th>IRC</th><th>P</th><th>Recomendação</th><th>Decisão</th></tr></thead><tbody>' +
+    l.slice(0, 8).map(e => '<tr><td class="num">' + esc(e.em.slice(8, 10) + '/' + e.em.slice(5, 7) + ' ' + e.em.slice(11, 16)) + '</td><td>' + esc(e.turno + ' ' + e.data.slice(8, 10) + '/' + e.data.slice(5, 7)) + '</td><td class="num">' + e.irc + '</td><td class="num">' + pct(e.p) + '</td><td>' + esc(NIVEIS[e.recomendacao].curto) + '</td><td>' + esc(NIVEIS[e.decisao].curto) + (e.obs ? '<br><small>' + esc(e.obs) + '</small>' : '') + '</td></tr>').join('') +
+    '</tbody></table>' + (l.length > 8 ? '<p class="nota">Mostrando 8 de ' + l.length + ' registros. Exporte o CSV para ver todos.</p>' : '');
+}
+function registrar() {
+  const R = S.R[S.sel]; if (!R || !temDados()) return;
+  const l = lerLog();
+  l.unshift({
+    em: agoraLocal(), data: R.j.data, turno: R.j.t.nome, irc: Math.round(R.irc), p: +R.P.toFixed(3),
+    n_indice: R.nIRC, n_custo: R.nCL, n_fuzzy: R.fz.nivel, recomendacao: R.nivel, decisao: +$('#reg-decisao').value,
+    obs: $('#reg-obs').value.trim(), chuva72: +R.por[0].x.ant.toFixed(1), accjanela: +R.por[0].x.acc.toFixed(1),
+    intmax: +Math.max.apply(null, R.por.map(r => r.x.int)).toFixed(1), dc: R.A.dc, inmet: R.A.inmet, cemaden: R.A.cem,
+    modo: S.sim.on ? 'simulacao' : DEMO ? 'demo' : 'real'
+  });
+  gravarLog(l); $('#reg-obs').value = ''; renderLog();
+}
+function exportarCSV() {
+  const l = lerLog(); if (!l.length) return;
+  const cols = ['em', 'data', 'turno', 'irc', 'p', 'n_indice', 'n_custo', 'n_fuzzy', 'recomendacao', 'decisao', 'obs', 'chuva72', 'accjanela', 'intmax', 'dc', 'inmet', 'cemaden', 'modo'];
+  const cel = v => typeof v === 'number' ? String(v).replace('.', ',') : '"' + String(v === undefined ? '' : v).replace(/"/g, '""') + '"';
+  baixar('risco-sj-decisoes.csv', '﻿' + cols.join(';') + '\n' + l.map(e => cols.map(k => cel(e[k])).join(';')).join('\n'), 'text/csv;charset=utf-8');
+}
+
+/* ----- parecer por modelo de linguagem ----- */
+function montarPrompt(R) {
+  const T = S.cfg.ensemble;
+  const resumo = {
+    campus: S.cfg.campus.nome,
+    turno: R.j.t.nome + ' de ' + (R.j.dia === 'hoje' ? 'hoje' : 'amanhã') + ' (' + R.j.data + '), das ' + R.j.t.ini + ' às ' + R.j.t.fim + ', considerando ' + S.cfg.deslocamentoH + ' h de deslocamento antes',
+    modo_dos_dados: S.sim.on ? 'simulação' : DEMO ? 'demonstração com dados sintéticos' : 'dados reais',
+    indice_IRC_0a100: Math.round(R.irc), probabilidade_evento: +R.P.toFixed(2), razao_custo_perda: R.r,
+    nivel_indice: NIVEIS[R.nIRC].nome, nivel_custo_perda: NIVEIS[R.nCL].nome, nivel_fuzzy: NIVEIS[R.fz.nivel].nome, recomendacao_do_painel: NIVEIS[R.nivel].nome,
+    alertas_oficiais: { defesa_civil_sc: DC_NOMES[R.A.dc], inmet: INMET_NOMES[R.A.inmet], cemaden: CEM_NOMES[R.A.cem], observacao_defesa_civil: S.cfg.manual.dcNota || '' },
+    municipios: R.por.map(r => ({ municipio: r.o.nome, parcela_estudantes: +R.partes[r.i].toFixed(2), chuva_max_mm_h: +r.x.int.toFixed(1), acumulado_na_janela_mm: +r.x.acc.toFixed(1), chuva_72h_anteriores_mm: +r.x.ant.toFixed(1), rajada_max_kmh: Math.round(r.x.gust), chuva_passada_medida_em_pluviometros: !!r.x.medida })),
+    alertas_vigentes: S.dc.alertas.concat(S.inmet.avisos).filter(a => S.cfg.origens.some(o => atinge(a, o)) && sobrepoe(a, R.j)).map(a => ({ fonte: a.fonte || 'INMET', titulo: a.titulo || a.desc || a.evento, nivel: a.fonte === 'INMET' || a.sev ? INMET_NOMES[a.sev] || a.nivel : DC_NOMES[a.nivel], ate: a.fim })),
+    ensemble: R.pm.fonte === 'ensemble' ? { membros: R.pm.n, acima_do_limiar: R.pm.k, limiar: T.acumuladoMM + ' mm na janela do turno ou ' + T.tresHorasMM + ' mm em 3 h' } : R.pm.fonte,
+    areas_de_risco_com_ativacao_elevada: R.areas.filter(x => x.at >= 0.45).map(x => x.a.nome)
+  };
+  const sistema = 'Você apoia a Direção-Geral do IFSC Câmpus São José (São José, SC) na decisão sobre suspensão de aulas presenciais por chuva. Escreva em português do Brasil, em tom técnico e direto, sem travessões. Use somente os dados fornecidos e não invente números. Considere o deslocamento de estudantes vindos de vários municípios da Grande Florianópolis e priorize a segurança. Estruture a resposta em: 1) Recomendação, escolhendo uma entre Manter aulas; Manter, em atenção; Flexibilizar; Suspender o turno; Suspender atividades presenciais. 2) Justificativa em até cinco itens. 3) Riscos de errar para cada lado. 4) O que monitorar nas próximas horas. Lembre que a decisão final é da Direção.';
+  return { sistema, usuario: 'Dados do turno em análise:\n' + JSON.stringify(resumo, null, 2) };
+}
+async function gerarParecer() {
+  const R = S.R[S.sel], out = $('#llm-out'), btn = $('#btn-llm');
+  const w = (S.cfg.workerURL || '').trim().replace(/\/$/, '');
+  if (!w) { out.textContent = 'Configure a URL do Worker em Configuração, Integrações, para gerar o parecer aqui. Enquanto isso, use Copiar prompt.'; return; }
+  if (!R || !temDados()) return;
+  const p = montarPrompt(R);
+  btn.disabled = true; out.textContent = 'Gerando parecer.';
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 60000);
+    const r = await fetch(w + '/llm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system: p.sistema, prompt: p.usuario }), signal: ctl.signal });
+    clearTimeout(t);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    const texto = j.text || (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+    out.textContent = texto ? semTravessao(texto) + '\n\nParecer gerado por modelo de linguagem a partir dos números do painel. Confira antes de usar.' : 'O Worker respondeu sem texto.';
+  } catch (e) { out.textContent = 'Não foi possível gerar o parecer: ' + (e.name === 'AbortError' ? 'tempo esgotado' : e.message) + '.'; }
+  finally { btn.disabled = false; }
+}
+
+/* ================= formulários ================= */
+function fmtCampo(el, v) {
+  if (el.dataset.tipo === 'ancoras') return v.map(p => p[0] + ':' + p[1]).join(', ');
+  if (el.dataset.tipo === 'lista') return v.join(', ');
+  return v === undefined || v === null ? '' : String(v);
+}
+function lerAncoras(t) {
+  const ps = t.split(',').map(s => s.trim()).filter(Boolean).map(s => s.split(':').map(Number));
+  if (ps.length < 2 || ps.some(p => p.length !== 2 || isNaN(p[0]) || isNaN(p[1]) || p[1] < 0 || p[1] > 1)) return null;
+  for (let i = 1; i < ps.length; i++) if (ps[i][0] <= ps[i - 1][0]) return null;
+  return ps;
+}
+function lerLista(t, antigo) {
+  const v = t.split(',').map(s => Number(s.trim()));
+  if (v.length !== antigo.length || v.some(x => isNaN(x) || x < 0 || x > 1)) return null;
+  return v;
+}
+function preencherCampos() {
+  $$('[data-cfg]').forEach(el => { const v = getPath(S.cfg, el.dataset.cfg); if (el.type === 'checkbox') el.checked = !!v; else el.value = fmtCampo(el, v); });
+}
+function ligarCampos() {
+  preencherCampos();
+  $$('[data-cfg]').forEach(el => el.addEventListener('change', () => {
+    const p = el.dataset.cfg, antigo = getPath(S.cfg, p);
+    let nv;
+    if (el.type === 'checkbox') nv = el.checked;
+    else if (el.dataset.tipo === 'ancoras') nv = lerAncoras(el.value);
+    else if (el.dataset.tipo === 'lista') nv = lerLista(el.value, antigo);
+    else if (el.type === 'number' || /^manual\.(dc|inmet|cemaden)$/.test(p)) nv = parseFloat(el.value);
+    else nv = el.value.trim();
+    if (nv === null || (typeof nv === 'number' && isNaN(nv))) { el.value = fmtCampo(el, antigo); el.setAttribute('aria-invalid', 'true'); setTimeout(() => el.removeAttribute('aria-invalid'), 2000); return; }
+    setPath(S.cfg, p, nv); salvarCfg();
+    if (p === 'cartoKey') trocarBase();
+    if (p === 'ensemble.modelos') carregar(); else recalcular();
+  }));
+}
+function montarOrigens() {
+  const tb = $('#origens-corpo');
+  tb.innerHTML = S.cfg.origens.map((o, i) => '<tr>' +
+    '<td><input data-i="' + i + '" data-k="nome" value="' + esc(o.nome) + '" aria-label="Município"></td>' +
+    '<td><input data-i="' + i + '" data-k="lat" type="number" step="0.0001" value="' + o.lat + '" aria-label="Latitude"' + (i === 0 ? ' disabled' : '') + '></td>' +
+    '<td><input data-i="' + i + '" data-k="lon" type="number" step="0.0001" value="' + o.lon + '" aria-label="Longitude"' + (i === 0 ? ' disabled' : '') + '></td>' +
+    '<td><input data-i="' + i + '" data-k="parte" type="number" min="0" step="1" value="' + o.parte + '" aria-label="Parcela"></td>' +
+    '<td><input data-i="' + i + '" data-k="ibge" value="' + esc(o.ibge || '') + '" aria-label="Código IBGE"></td>' +
+    '<td>' + (i === 0 ? '' : '<button type="button" class="btn sec" data-rem="' + i + '" aria-label="Remover ' + esc(o.nome) + '">Remover</button>') + '</td></tr>').join('');
+  let tmr = null;
+  $$('input', tb).forEach(el => el.addEventListener('change', () => {
+    const o = S.cfg.origens[+el.dataset.i], k = el.dataset.k;
+    if (k === 'lat' || k === 'lon' || k === 'parte') { const v = parseFloat(el.value); if (isNaN(v)) { el.value = o[k]; return; } o[k] = v; } else o[k] = el.value.trim();
+    salvarCfg(); S.areas = prepararAreas(S.areas);
+    if (k === 'lat' || k === 'lon') { clearTimeout(tmr); tmr = setTimeout(carregar, 800); } else recalcular();
+  }));
+  $$('[data-rem]', tb).forEach(b => b.addEventListener('click', () => { S.cfg.origens.splice(+b.dataset.rem, 1); salvarCfg(); S.areas = prepararAreas(S.areas); montarOrigens(); carregar(); }));
+}
+function montarTurnos() {
+  const box = $('#campos-turnos');
+  box.innerHTML = S.cfg.turnos.map((t, i) => '<label class="campo">' + esc(t.nome) + ', início <input type="time" data-t="' + i + '" data-k="ini" value="' + t.ini + '"></label><label class="campo">' + esc(t.nome) + ', fim <input type="time" data-t="' + i + '" data-k="fim" value="' + t.fim + '"></label>').join('') +
+    '<label class="campo">Deslocamento antes do turno (h) <input type="number" min="0" max="4" step="0.5" id="cfg-desl" value="' + S.cfg.deslocamentoH + '"></label>';
+  $$('input[data-t]', box).forEach(el => el.addEventListener('change', () => { if (!/^\d{2}:\d{2}$/.test(el.value)) return; S.cfg.turnos[+el.dataset.t][el.dataset.k] = el.value; salvarCfg(); recalcular(); }));
+  $('#cfg-desl').addEventListener('change', e => { const v = parseFloat(e.target.value); if (isNaN(v) || v < 0 || v > 4) { e.target.value = S.cfg.deslocamentoH; return; } S.cfg.deslocamentoH = v; salvarCfg(); recalcular(); });
+}
+function montarSimulacao() {
+  const defs = [
+    ['ant', 'Chuva nas 72 h anteriores', 0, 250, 5, 'mm'], ['acc', 'Acumulado na janela', 0, 200, 5, 'mm'], ['int', 'Intensidade máxima', 0, 100, 1, 'mm/h'],
+    ['gust', 'Rajada máxima', 0, 130, 5, 'km/h'], ['pens', 'Probabilidade nos modelos', 0, 100, 1, '%'], ['dc', 'Alerta da Defesa Civil', 0, 5, 1, ''], ['inmet', 'Aviso do INMET', 0, 3, 1, '']
+  ];
+  const rot = (k, v) => k === 'dc' ? DC_NOMES[v] : k === 'inmet' ? INMET_NOMES[v] : v;
+  $('#sim-grade').innerHTML = defs.map(d => '<label class="campo">' + d[1] + ': <output id="so-' + d[0] + '">' + rot(d[0], S.sim[d[0]]) + '</output> ' + d[5] + '<input type="range" min="' + d[2] + '" max="' + d[3] + '" step="' + d[4] + '" value="' + S.sim[d[0]] + '" data-sim="' + d[0] + '"></label>').join('');
+  $$('[data-sim]').forEach(el => el.addEventListener('input', () => { const k = el.dataset.sim; S.sim[k] = +el.value; $('#so-' + k).textContent = rot(k, S.sim[k]); if (S.sim.on) recalcular(); }));
+  $('#sim-on').addEventListener('change', e => { S.sim.on = e.target.checked; recalcular(); });
+}
+function ligarBotoes() {
+  $('#btn-atualizar').addEventListener('click', carregar);
+  $('#g-origem').addEventListener('change', e => { S.origemGrafico = +e.target.value; renderGraficoChuva(); });
+  $('#btn-llm').addEventListener('click', gerarParecer);
+  $('#btn-prompt').addEventListener('click', e => { const R = S.R[S.sel]; if (!R || !temDados()) return; const p = montarPrompt(R); copiar(p.sistema + '\n\n' + p.usuario, e.currentTarget); });
+  $('#comunicado').addEventListener('input', () => { $('#comunicado').dataset.editado = S.sel; });
+  $('#btn-copiar-com').addEventListener('click', e => copiar($('#comunicado').value, e.currentTarget));
+  $('#btn-imprimir').addEventListener('click', () => window.print());
+  $('#reg-decisao').innerHTML = NIVEIS.map((n, i) => '<option value="' + i + '">' + esc(n.nome) + '</option>').join('');
+  $('#btn-registrar').addEventListener('click', registrar);
+  $('#btn-csv').addEventListener('click', exportarCSV);
+  $('#btn-limpar-log').addEventListener('click', () => { if (confirm('Apagar todo o histórico de decisões deste navegador?')) { gravarLog([]); renderLog(); } });
+  $('#btn-add-origem').addEventListener('click', () => { S.cfg.origens.push({ id: 'o' + Date.now(), nome: 'Novo município', lat: -27.6, lon: -48.65, parte: 0, ibge: '' }); salvarCfg(); montarOrigens(); });
+  $('#btn-exp-cfg').addEventListener('click', () => baixar('risco-sj-configuracao.json', JSON.stringify({ v: 1, cfg: S.cfg }, null, 2), 'application/json'));
+  $('#arq-cfg').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const j = JSON.parse(await f.text()); if (!j || j.v !== 1 || !j.cfg) throw new Error('formato'); S.cfg = deepMerge(clone(DEFAULTS), j.cfg); salvarCfg(); preencherCampos(); montarOrigens(); montarTurnos(); trocarBase(); carregar(); }
+    catch (err) { alert('Arquivo de configuração inválido.'); }
+    e.target.value = '';
+  });
+  $('#btn-reset-cfg').addEventListener('click', () => { if (!confirm('Restaurar todos os parâmetros para os valores padrão?')) return; S.cfg = clone(DEFAULTS); salvarCfg(); preencherCampos(); montarOrigens(); montarTurnos(); trocarBase(); S.areas = prepararAreas(S.areas); carregar(); });
+  $('#arq-areas').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const t = await f.text();
+      const lista = /\.kml$/i.test(f.name) || /^\s*</.test(t) ? areasDeKML(t) : areasDeGeoJSON(JSON.parse(t));
+      if (!lista.length) throw new Error('vazio');
+      salvarAreas(lista, f.name); S.areas = prepararAreas(lista); S.areasFonte = f.name;
+      if (S.mapa) { const b = L.latLngBounds(lista.map(a => [a.lat, a.lon])); if (b.isValid()) S.mapa.fitBounds(b.pad(0.15)); }
+      recalcular();
+    } catch (err) { alert('Não foi possível ler o arquivo. Use GeoJSON em WGS 84 (latitude e longitude em graus) ou KML.'); }
+    e.target.value = '';
+  });
+  $('#arq-pluv').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const r = estacoesDeCSV(lerCSV(await f.text()), $('#pluv-fuso').value === 'utc');
+      if (!r.nGrupos) throw new Error('nenhuma estação dos municípios monitorados no arquivo');
+      if (!r.est.length) { const u = isFinite(r.ultimo) ? deMin(r.ultimo) : ''; throw new Error('o arquivo não tem registros das últimas 2 horas' + (u ? ' (o último é de ' + u.slice(8, 10) + '/' + u.slice(5, 7) + '/' + u.slice(0, 4) + ' às ' + hhmm(u.slice(11, 16)) + ')' : '') + '. Baixe os dados mais recentes no Mapa Interativo'); }
+      S.pluv = { estado: 'manual', estacoes: r.est, arquivo: f.name };
+      recalcular();
+    } catch (err) { alert('Não foi possível usar o arquivo: ' + err.message + '.'); }
+    e.target.value = '';
+  });
+  $('#btn-areas-base').addEventListener('click', () => { try { localStorage.removeItem(CHAVE_AREAS); } catch (e) {} carregarAreas(); recalcular(); });
+  let tr = null;
+  window.addEventListener('resize', () => { clearTimeout(tr); tr = setTimeout(() => { const R = S.R[S.sel]; if (R) { renderGraficoChuva(); renderEnsemble(R); } }, 200); });
+}
+
+/* ================= demonstração ================= */
+function prng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function aplicarDemo() {
+  const r = prng(20261105), gauss = () => Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(2 * Math.PI * r());
+  const h = hojeStr(), t0 = paraMin(somaDias(h, -3) + 'T00:00'), N = 24 * 6;
+  const tm = Array.from({ length: N }, (_, k) => t0 + k * 60);
+  const pico = paraMin(h + 'T19:00'), ontem = paraMin(somaDias(h, -1) + 'T15:00'), resto = paraMin(somaDias(h, 1) + 'T07:00');
+  const g = (m, c, a, s) => a * Math.exp(-0.5 * Math.pow((m - c) / (s * 60), 2));
+  const amp = [30, 24, 36, 16, 28];
+  S.fc = S.cfg.origens.map((o, i) => {
+    const A = amp[i % amp.length], d = (i - 2) * 20;
+    const p = tm.map(m => Math.round(Math.max(0, g(m, pico + d, A, 1.3) + g(m, ontem, 4.5, 5) + g(m, resto, 5, 2.2) + (r() < 0.15 ? r() * 1.5 : 0)) * 10) / 10);
+    return { tm, p, pop: p.map((v, k) => Math.min(100, Math.round(15 + v * 5 + g(tm[k], pico, 40, 6)))), g: tm.map(m => Math.round(22 + g(m, pico, 48, 4) + r() * 8)) };
+  });
+  const b0 = S.fc[0];
+  const membros = Array.from({ length: 51 }, (_, k) => {
+    const fator = Math.exp(0.5 * gauss()), desl = Math.round((r() - 0.5) * 6);
+    return { k: 'precipitation_member' + String(k).padStart(2, '0'), v: tm.map((m, q) => { const qq = q - desl; return Math.round((qq >= 0 && qq < N ? b0.p[qq] : 0) * fator * 10) / 10; }) };
+  });
+  S.ens = { tm, membros, modelos: 'demonstração' };
+  S.inmet = { estado: 'demo', avisos: [{ desc: 'Chuvas Intensas', sev: 2, ini: h + 'T10:00', fim: somaDias(h, 1) + 'T10:00', ibges: ['4216602', '4205407', '4211900'], munTxt: 'São José, Florianópolis, Palhoça' }] };
+  S.dc = { estado: 'demo', alertas: [{ fonte: 'Defesa Civil (IDAP)', id: 'demo-1', remetente: 'Defesa Civil de Santa Catarina', evento: 'Chuvas Intensas', nivel: 3, nivel_origem: 'demonstração',
+    titulo: 'Alerta alto: chuva intensa com risco de alagamentos e deslizamentos na Grande Florianópolis', ini: h + 'T15:00', fim: somaDias(h, 1) + 'T06:00',
+    ibges: ['4216602', '4211900', '4205407'], geocodes: [], poligonos: [[[-27.53, -48.74], [-27.53, -48.50], [-27.70, -48.50], [-27.70, -48.74]]] }] };
+  const agoraM = paraMin(agoraLocal()), pertos = [[0.004, -0.012], [-0.018, 0.010], [0.012, 0.016]];
+  const est = [];
+  S.cfg.origens.forEach((o, i) => {
+    const n = i === 0 || i === 2 ? 3 : i === 3 ? 1 : 2, f = S.fc[i];
+    for (let k = 0; k < n; k++) {
+      const acc = {}, fator = 0.8 + 0.4 * r();
+      [1, 3, 6, 12, 24, 48, 72, 96].forEach(hh => { acc[hh] = Math.round(somaPonderada(f, agoraM - hh * 60, agoraM) * fator * 10) / 10; });
+      est.push({ id: 'demo-' + i + '-' + k, nome: 'Pluviômetro ' + (k + 1), municipio: o.nome, lat: +o.lat + pertos[k][0], lon: +o.lon + pertos[k][1], acc, quando: agoraLocal() });
+    }
+  });
+  S.pluv = { estado: 'demo', estacoes: est };
+  S.coletor = { estado: 'demo' };
+  S.fcEstado = 'demo'; S.ensEstado = 'demo';
+}
+
+/* ================= ciclo de dados ================= */
+async function carregar() {
+  if (S.carregando) return;
+  S.carregando = true; $('#btn-atualizar').disabled = true; renderFontes();
+  if (DEMO) aplicarDemo();
+  else {
+    if (S.fcEstado !== 'ok') S.fcEstado = 'carregando';
+    const tarefas = [
+      buscarPrevisao().then(fc => { S.fc = fc; S.fcEstado = 'ok'; recalcular(); }).catch(e => { S.fcEstado = 'erro'; S.fcErro = e.message; }),
+      buscarEnsemble().then(en => { S.ens = en; S.ensEstado = 'ok'; S.ensErro = ''; }).catch(e => { S.ens = null; S.ensEstado = 'erro'; S.ensErro = e.message; })
+    ];
+    let col = null;
+    try { col = await buscarColetor(); S.coletor = { estado: 'ok', gerado: col.gerado, idade: col.idade, fontes: col.fontes }; }
+    catch (e) { S.coletor = { estado: 'erro', erro: e.message }; }
+    const f = col ? col.fontes : {};
+    if (col) {
+      S.dc = (f.idap && f.idap.ok) || col.dc.length ? { estado: 'ok', alertas: col.dc } : { estado: 'erro', alertas: [], erro: (f.idap && f.idap.msg) || 'IDAP sem resposta no coletor' };
+      if (f.cemaden_pluviometros && f.cemaden_pluviometros.ok) S.pluv = { estado: 'ok', estacoes: col.pluv };
+      else if (S.pluv.estado !== 'manual') S.pluv = { estado: 'erro', estacoes: [], erro: (f.cemaden_pluviometros && f.cemaden_pluviometros.msg) || 'sem dados no coletor' };
+      if (f.inmet && f.inmet.ok) S.inmet = { estado: 'ok', avisos: col.inmet };
+    } else {
+      S.dc = { estado: 'erro', alertas: [], erro: 'coletor não encontrado; publique pelo GitHub Actions' };
+      if (S.pluv.estado !== 'manual') S.pluv = { estado: 'erro', estacoes: [], erro: 'coletor não encontrado' };
+    }
+    if (!(f.inmet && f.inmet.ok)) tarefas.push(buscarINMET().then(av => { S.inmet = { estado: 'ok', avisos: av }; }).catch(e => { S.inmet = { estado: 'erro', avisos: [], erro: e.message }; }));
+    await Promise.allSettled(tarefas);
+  }
+  S.carregando = false; S.atualizado = agoraLocal(); $('#btn-atualizar').disabled = false;
+  recalcular();
+}
+
+function iniciar() {
+  $('#versao').textContent = VERSAO;
+  S.cfg = carregarCfg();
+  carregarAreas();
+  montarOrigens(); montarTurnos(); montarSimulacao(); ligarCampos(); ligarBotoes();
+  iniciarMapa();
+  recalcular();
+  carregar();
+  setInterval(carregar, 10 * 60 * 1000);
+  setInterval(() => { if (!S.carregando) recalcular(); }, 5 * 60 * 1000);
+}
+iniciar();
+
+window.RISCO = { S, avaliar, fuzzy, pw, montarJanelas };
+})();
+</script>
+</body>
+</html>
