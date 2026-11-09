@@ -9,11 +9,13 @@ Author Ramon Mayor Martins, Ph.D. // [@rmayormartins](https://github.com/rmayorm
 Para cada turno de hoje e de amanhã (matutino, vespertino e noturno, incluindo o tempo de deslocamento antes das aulas), o painel:
 
 1. Lê os **alertas da Defesa Civil** publicados no IDAP, o mesmo canal que dispara o SMS 40199 e o Defesa Civil Alerta, com polígono e códigos IBGE.
-2. Lê os **avisos do INMET** e a **chuva medida nos pluviômetros do CEMADEN**.
-3. Busca a previsão horária (Open-Meteo) para os municípios de origem dos estudantes e o conjunto de modelos ICON, GFS e ECMWF para o câmpus.
-4. Cruza tudo com as áreas de risco (deslizamento e inundação).
-5. Decide de três formas independentes: índice ponderado (IRC, de 0 a 100), probabilidade com modelo custo-perda e inferência fuzzy. A recomendação final é a mediana dos três e nunca fica abaixo do nível indicado pelo alerta oficial.
-6. Gera o rascunho do comunicado, registra a decisão tomada e, opcionalmente, pede um parecer em texto a um modelo de linguagem.
+2. Lê os **avisos do INMET**, a **chuva medida nos pluviômetros do CEMADEN** e o **nível dos rios** nas estações telemétricas da ANA.
+3. Classifica cada alerta: chuva (entra no índice), costeiro (ressaca e ventos costeiros, que agravam alagamentos) ou informativo (temperatura, umidade e afins, fora do índice).
+4. Busca a previsão horária (Open-Meteo) para os municípios de origem dos estudantes, o conjunto de modelos ICON, GFS e ECMWF para o câmpus e a **maré prevista** (Open-Meteo Marine).
+5. Cruza tudo com as áreas de risco (deslizamento e inundação).
+6. Decide de três formas independentes: índice ponderado (IRC, de 0 a 100), probabilidade com modelo custo-perda e inferência fuzzy. A recomendação final é a mediana dos três e nunca fica abaixo do nível indicado pelo alerta oficial.
+7. Estima a **probabilidade de alagamento** em São José por regressão logística (chuva em 1 h, em 3 h e em 72 h, e maré), com uma ferramenta para calibrar o modelo com o histórico de ocorrências.
+8. Gera o rascunho do comunicado, registra a decisão tomada e, opcionalmente, pede um parecer em texto a um modelo de linguagem.
 
 ## Arquitetura
 
@@ -22,14 +24,15 @@ GitHub Actions (a cada 10 min)                 GitHub Pages
   coletor/coletar.py                             index.html
     IDAP (Defesa Civil, CAP 1.2)   ──►  dados/alertas.json  ──►  painel no navegador
     INMET (JSON ou RSS + CAP)                                     + Open-Meteo (previsão e ensemble)
-    CEMADEN (pluviômetros)
+    CEMADEN (pluviômetros)                                        + Open-Meteo Marine (maré)
+    ANA (nível dos rios)                dados/modelo-alagamento.json (opcional, gerado pela calibração)
 ```
 
-O coletor existe por três motivos: os servidores do governo não liberam consulta direta do navegador (CORS), o feed nacional do IDAP tem vários megabytes e não deve ser baixado em cada celular, e credenciais futuras (como as do CEMADEN) ficam guardadas como segredos do repositório.
+O coletor existe por três motivos: os servidores do governo não liberam consulta direta do navegador (CORS), o feed nacional do IDAP tem vários megabytes e não deve ser baixado em cada celular, e credenciais (como as da ANA) ficam guardadas como segredos do repositório.
 
 ## Publicar
 
-1. Crie um repositório, por exemplo `risco-sj`, e envie os arquivos mantendo a estrutura de pastas:
+1. Crie um repositório, por exemplo `ifsc-riscosj`, e envie os arquivos mantendo a estrutura de pastas. A pasta `.github` começa com ponto e fica oculta em muitos exploradores de arquivos; se ela não subir junto, crie o arquivo pelo GitHub em Add file, Create new file, com o nome `.github/workflows/coletar.yml`.
    ```
    index.html
    worker.js                      (opcional)
@@ -40,11 +43,12 @@ O coletor existe por três motivos: os servidores do governo não liberam consul
 2. Em **Settings, Pages, Build and deployment**, escolha a fonte **GitHub Actions**.
 3. Em **Settings, Actions, General, Workflow permissions**, marque **Read and write permissions** (o coletor guarda o histórico de alertas no repositório).
 4. Em **Actions, Coletar dados e publicar**, clique em **Run workflow** para a primeira execução. O log mostra uma linha por fonte, com ok ou FALHA e o motivo.
-5. O painel fica em `https://rmayormartins.github.io/risco-sj/`. No topo, a etiqueta **Coletor** mostra há quantos minutos os dados oficiais foram atualizados.
+5. O painel fica em `https://rmayormartins.github.io/ifsc-riscosj/`. No topo, a etiqueta **Coletor** mostra há quantos minutos os dados oficiais foram atualizados.
+6. Opcional: cadastre as credenciais da ANA para o nível dos rios (veja a seção Nível dos rios).
 
 Depois disso, o workflow roda sozinho a cada 10 minutos e também a cada push na branch `main`.
 
-Para ver o painel funcionando em um dia seco, use o modo demonstração: `https://rmayormartins.github.io/risco-sj/?demo=1`.
+Para ver o painel funcionando em um dia seco, use o modo demonstração: `https://rmayormartins.github.io/ifsc-riscosj/?demo=1`.
 
 ## Primeiros ajustes no painel
 
@@ -64,7 +68,9 @@ Se adicionar municípios no painel, adicione também no coletor criando `coletor
 | Defesa Civil (IDAP) | Alertas à população, com nível de baixo a extremo (Portaria MIDR nº 2.458/2026), vigência, polígono e códigos IBGE | Feed nacional CAP 1.2 em `idapfile.mdr.gov.br/idap/api/rss/cap` |
 | INMET | Avisos amarelo, laranja e vermelho | `apiprevmet3.inmet.gov.br/avisos/ativos`; se falhar, RSS com um CAP por aviso |
 | CEMADEN | Chuva acumulada em 1, 3, 6, 12, 24, 48, 72 e 96 h nos pluviômetros automáticos | Dados abertos da rede observacional (JSON com acumulados ou CSV com a série de registros) |
+| ANA | Nível dos rios (cm), variação em 24 h e série de 48 h nas estações telemétricas | Hidro-WebService, com credenciais; sem elas, tenta o serviço público antigo |
 | Open-Meteo | Previsão horária e ensemble | Consultado direto pelo navegador |
+| Open-Meteo Marine | Nível do mar previsto (maré) e altura de onda | Consultado direto pelo navegador |
 | SDC/SC (site) | Publicações da categoria Alerta | Desligado por padrão (veja abaixo) |
 
 Sobre o CEMADEN: o órgão informou, em resposta a pedido pela Lei de Acesso à Informação, que não tem API para entregar alertas vigentes a outras instituições. Seus alertas seguem para a Defesa Civil, que os divulga pelo IDAP. Por isso o painel usa do CEMADEN a chuva medida, e o alerta do CEMADEN só entra por ajuste manual.
@@ -78,6 +84,14 @@ Detalhes dos pluviômetros, confirmados com dados reais do CEMADEN (Itajaí, fev
 
 Se a coleta automática dos pluviômetros falhar, baixe as últimas 72 h no [Mapa Interativo do CEMADEN](https://mapainterativo.cemaden.gov.br/) e use **Importar CSV de pluviômetros** no painel, no bloco do CEMADEN. O painel aplica as mesmas regras do coletor.
 
+Cada alerta recebe uma **classe**, deduzida do evento e do título:
+
+- **chuva**: chuva, tempestade, temporal, alagamento, inundação, enxurrada, deslizamento, granizo, vendaval. Entra no índice, na probabilidade e no piso, como antes;
+- **costeiro**: ressaca, maré e ventos costeiros. Não conta como alerta de chuva: pede no máximo atenção e soma um acréscimo à maré no modelo de alagamento (0,15, 0,30 ou 0,45 m para moderado, alto ou severo, configurável), porque ressaca e maré alta dificultam o escoamento quando chove forte;
+- **outro**: temperatura, umidade, geada, estiagem, incêndio. Só informativo.
+
+Na dúvida, o alerta conta como chuva. A etiqueta da classe aparece ao lado do alerta no painel.
+
 O nível de cada alerta da Defesa Civil vem, nesta ordem, de um parâmetro do CAP que informe o nível, do texto do alerta ou da severidade CAP (Minor: baixo; Moderate: moderado; Severe: severo; Extreme: extremo). O painel mostra de onde o nível foi tirado ao passar o cursor sobre a etiqueta.
 
 ## Primeira execução e diagnóstico
@@ -86,7 +100,8 @@ Os formatos do IDAP, do INMET e do CEMADEN não têm documentação pública est
 
 - `fontes`: estado de cada fonte, com a mensagem de erro quando houver;
 - `diagnostico.idap`: os nomes de geocódigo e as severidades encontrados no feed;
-- `diagnostico.cemaden_chaves`: os campos do JSON dos pluviômetros.
+- `diagnostico.cemaden_chaves`: os campos do JSON dos pluviômetros;
+- `rios`: o nível de cada estação da ANA, quando as credenciais estiverem configuradas.
 
 Se uma fonte mudar de formato, o painel continua funcionando com as demais e com o ajuste manual.
 
@@ -95,6 +110,24 @@ Se uma fonte mudar de formato, o painel continua funcionando com as demais e com
 - **Feed do site da SDC/SC.** O `robots.txt` do site da Defesa Civil de SC restringe acesso automatizado, então essa fonte vem desligada. Os alertas da SDC/SC já chegam pelo IDAP. Se a SDC/SC autorizar, crie em Settings, Secrets and variables, Actions, Variables, a variável `RISCO_SDC_SITE` com valor `1`.
 - **Pluviômetros com dados a cada 10 minutos.** A Plataforma de Entrega de Dados do CEMADEN (ped.cemaden.gov.br) oferece séries com cadastro e token. É uma melhoria possível; as credenciais iriam como segredos do repositório.
 - **Rodar localmente.** Com Python 3.10 ou superior: `python coletor/coletar.py`, e depois `python -m http.server` na pasta do projeto.
+
+## Nível dos rios (ANA)
+
+O coletor lê duas estações telemétricas da ANA na bacia do rio Cubatão do Sul, as mesmas que a Sala de Situação ANA/Epagri/Ciram acompanha: **84100000, Poço Fundo** (Santo Amaro da Imperatriz) e **84150100, ETA Casan montante** (Palhoça). Para os rios Maruim e Forquilhas, em São José, não foi localizada estação telemétrica pública.
+
+Sem credenciais, o coletor tenta o serviço público antigo (Telemetria1WS), que a ANA vem desativando; se ele não responder, o painel mostra "sem credenciais da ANA" e segue sem os rios.
+
+O nível só entra no índice com **cotas de referência** (atenção, alerta e emergência, em cm na régua da estação). Peça os valores à Sala de Situação (sshidrosc@epagri.sc.gov.br) e informe em Configuração, Alagamento, maré e rios, ou no arquivo `coletor/rios.json`. Com cotas, um rio acima da cota funciona como alerta para os municípios da bacia no dia de hoje (atenção, flexibilizar ou suspender). Para incluir outras estações, crie `coletor/rios.json` com a lista (`codigo`, `nome`, `municipio`, `ibges`, `cotas`). Se os horários vierem em UTC, o coletor detecta e corrige; para forçar, defina `ANA_FUSO=utc`.
+
+## Probabilidade de alagamento
+
+A seção Probabilidade de alagamento estima a chance de haver alagamento registrado em São José no período do turno, por regressão logística com quatro variáveis medidas na janela: chuva máxima em 1 h, chuva máxima em 3 h, chuva das 72 h anteriores e maré máxima (mais o acréscimo por alerta de ressaca). A chuva vem de cada membro do ensemble, e a probabilidade é a média sobre os membros; nas horas que já passaram, a chuva dos pluviômetros entra quando é maior que a prevista.
+
+O painel vem com um **modelo de referência** de especialista (cerca de 1% num dia seco e 50% com 30 mm/h e 40 mm em 3 h). Ele serve para mostrar o funcionamento e, nesse estado, não entra na decisão. Depois de calibrado, o método custo-perda passa a usar a maior entre a probabilidade de chuva forte e a de alagamento (a opção fica em Configuração, Alagamento, maré e rios).
+
+### Como calibrar
+
+Recomenda-se pelo menos uns 20 dias com alagamento; com menos de 5 a calibração não roda. Os dias marcados com "Houve alagamento" no Registro de decisões também entram, então o modelo melhora com o uso. **Exportar tabela diária** baixa o CSV com as variáveis de cada dia, para análise em outra ferramenta.
 
 ## Importar a setorização do SGB
 
@@ -120,20 +153,23 @@ Com o coletor publicado, o Worker só é necessário para o **parecer por modelo
 - IRC = 100 × [(1 − λ) × perigo regional + λ × exposição das áreas de risco], com λ = 20% por padrão. Alertas oficiais impõem pisos de 25, 50 ou 75 pontos.
 - Probabilidade: fração de membros do ensemble acima dos limiares, combinada com a probabilidade associada ao alerta oficial. Suspender é recomendado quando ela passa da razão custo-perda C/L (padrão 0,30).
 - Fuzzy: sistema Mamdani com 12 regras legíveis; o painel mostra as regras que mais pesaram.
+- Alagamento: regressão logística diária, média sobre os membros do ensemble; entra no custo-perda só depois de calibrada.
 
 ## Calibração
 
-Pesos, limiares e probabilidades por alerta são valores iniciais de especialista. O coletor grava em `dados/historico/AAAA-MM.jsonl` cada mudança nos alertas oficiais, com a chuva de 24 h dos pluviômetros. No painel, o Registro de decisões guarda o que a Direção decidiu. Depois de uma temporada de chuvas, os dois juntos permitem ajustar os pesos ou estimar uma regressão logística com casos reais do câmpus.
+Pesos, limiares e probabilidades por alerta são valores iniciais de especialista. O coletor grava em `dados/historico/AAAA-MM.jsonl` cada mudança nos alertas oficiais (com a classe de cada um), a mediana da chuva de 24 h dos pluviômetros por município e o nível dos rios. No painel, o Registro de decisões guarda o que a Direção decidiu, se houve alagamento e a probabilidade de alagamento calculada. O modelo de alagamento já tem ferramenta própria de calibração (seção anterior); os pesos do índice podem ser revistos com os mesmos dados depois de uma temporada de chuvas.
 
 ## Limitações
 
 - O agendamento do GitHub Actions pode atrasar alguns minutos em horários de pico, e é desativado depois de 60 dias sem atividade no repositório. O arquivo mensal do histórico cria pelo menos um commit por mês.
 - O feed do IDAP guarda poucas horas de alertas; a coleta a cada 10 minutos cobre isso.
 - A previsão tem resolução de alguns quilômetros e não representa chuvas muito localizadas.
+- A maré do Open-Meteo inclui a maré astronômica e o efeito da pressão, mas não o empilhamento de água pelo vento, e tem precisão limitada perto da costa. O acréscimo por ressaca compensa isso de forma aproximada.
+- O modelo de alagamento é diário e não representa a drenagem de cada bairro; antes da calibração, seus números são ilustrativos.
 - O painel apoia a decisão e não substitui os alertas e comunicados oficiais da Defesa Civil.
 
 ## Créditos dos dados
 
-Alertas: Defesa Civil (IDAP, Ministério da Integração e do Desenvolvimento Regional) e INMET. Chuva medida: CEMADEN/MCTI. Previsão e ensemble: [Open-Meteo](https://open-meteo.com) (CC BY 4.0). Setorização de risco: Serviço Geológico do Brasil. Mapa: Esri e colaboradores do OpenStreetMap, ou CARTO.
+Alertas: Defesa Civil (IDAP, Ministério da Integração e do Desenvolvimento Regional) e INMET. Chuva medida: CEMADEN/MCTI. Nível dos rios: ANA. Previsão, ensemble e maré: [Open-Meteo](https://open-meteo.com) e Open-Meteo Marine (CC BY 4.0). Setorização de risco: Serviço Geológico do Brasil. Mapa: Esri e colaboradores do OpenStreetMap, ou CARTO.
 
-RISCO.sj versão 1.2, 2026. Contato: ramon.mayor@ifsc.edu.br
+RISCO.sj versão 1.3, 2026. Contato: ramon.mayor@ifsc.edu.br
