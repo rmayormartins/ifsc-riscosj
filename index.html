@@ -242,6 +242,29 @@ table.origens input{width:100%}
 .leaflet-popup-content{font-size:13px;line-height:1.45;margin:10px 12px}
 .leaflet-popup-content b{font-size:14px}
 
+/* alagamento, rios e calibração */
+.alag{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:start}
+.alag-num{font-size:44px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums;margin:2px 0 6px}
+.alag-num small{font-size:14px;font-weight:400;color:var(--tinta-2)}
+.selo{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:2px;border:1px solid var(--linha-forte);background:var(--suave);color:var(--tinta-2)}
+.selo.ok{border-color:var(--verde);background:var(--verde-claro);color:var(--verde-tinta)}
+table.fat-alag{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+table.fat-alag th,table.fat-alag td{text-align:left;padding:6px;border-bottom:1px solid var(--linha);vertical-align:top}
+table.fat-alag th{color:var(--tinta-2);font-weight:500;font-size:13px}
+table.fat-alag td.num{font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:2px;border:1px dashed var(--linha-forte);color:var(--tinta-2);margin-right:4px;vertical-align:1px}
+.rios{list-style:none;margin:6px 0 0;padding:0}
+.rios li{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha);font-size:14px}
+.rios small{color:var(--tinta-2)}
+.rios svg{width:150px;height:36px;display:block}
+.calib-res table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 14px}
+.calib-res th,.calib-res td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--linha);vertical-align:top}
+.calib-res th{color:var(--tinta-2);font-weight:500}
+.calib-res td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.metr{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 18px;margin:8px 0 12px}
+.metr div{font-size:13px;color:var(--tinta-2)}
+.metr b{display:block;font-size:20px;color:var(--tinta);font-variant-numeric:tabular-nums}
+
 /* rodapé */
 .rodape{border-top:4px solid var(--verde);background:var(--verde-claro);margin-top:40px;font-size:13px;color:var(--tinta-2)}
 .rodape .wrap{padding-top:18px;padding-bottom:22px}
@@ -251,7 +274,7 @@ table.origens input{width:100%}
 @media (max-width:1020px){
   .veredito{grid-template-columns:1fr}
   .v-grade{border-left:0;border-top:1px solid rgba(0,0,0,.12)}
-  .dupla,.dupla-2{grid-template-columns:minmax(0,1fr)}
+  .dupla,.dupla-2,.alag{grid-template-columns:minmax(0,1fr)}
   .metodos{grid-template-columns:minmax(0,1fr)}
   .metodo,.metodo:first-child,.metodo:last-child{border-right:0;padding:16px 0;border-bottom:1px solid var(--linha)}
   .topo .wrap{grid-template-columns:1fr}
@@ -268,6 +291,7 @@ table.origens input{width:100%}
   #mapa{height:400px}
   .fator{grid-template-columns:minmax(0,8.5rem) minmax(0,1fr) 2.4rem}
   .reg-form{grid-template-columns:1fr}
+  .rios li{grid-template-columns:minmax(0,1fr)}
   .grade{grid-template-columns:repeat(3,minmax(0,1fr))}
   .grade>span:first-child{display:none}
   .grade .rot{grid-column:1/-1;padding-top:4px}
@@ -300,7 +324,7 @@ table.origens input{width:100%}
     <div>
       <h1>RISCO.sj</h1>
       <p class="assin">Author <a href="https://rmayormartins.github.io" target="_blank" rel="noopener">Ramon Mayor Martins, Ph.D.</a> // <a href="https://github.com/rmayormartins" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>@rmayormartins</a> // <a href="https://www.ifsc.edu.br/web/campus-sao-jose" target="_blank" rel="noopener">IFSC SJ</a> - <a href="https://wiki.sj.ifsc.edu.br" target="_blank" rel="noopener">Área de Telecomunicações</a></p>
-      <p class="lede">Risco de chuva e apoio à decisão sobre suspensão de aulas no IFSC Câmpus São José. O painel cruza alertas oficiais, previsão de vários modelos meteorológicos e áreas de risco da Grande Florianópolis, turno a turno.</p>
+      <p class="lede">Risco de chuva e apoio à decisão sobre suspensão de aulas no IFSC Câmpus São José. O painel cruza alertas oficiais, previsão de vários modelos meteorológicos, maré, nível dos rios e áreas de risco da Grande Florianópolis, turno a turno.</p>
     </div>
     <div class="estado">
       <p id="atualizado">Buscando dados</p>
@@ -341,7 +365,7 @@ table.origens input{width:100%}
       <div id="fatores"></div>
 
       <h2 class="h2" style="margin-top:26px">Alertas oficiais</h2>
-      <p class="sub">Os alertas da Defesa Civil chegam pelo IDAP, o mesmo canal do SMS 40199 e do Defesa Civil Alerta. Os avisos do INMET e a chuva dos pluviômetros do CEMADEN também são coletados a cada 10 minutos. Use o ajuste manual só quando souber de algo que ainda não apareceu aqui.</p>
+      <p class="sub">Os alertas da Defesa Civil chegam pelo IDAP, o mesmo canal do SMS 40199 e do Defesa Civil Alerta. Os avisos do INMET, a chuva dos pluviômetros do CEMADEN e o nível dos rios também são coletados a cada 10 minutos. Alertas de ressaca e ventos costeiros entram no módulo de alagamento; os de temperatura e umidade aparecem como informativos. Use o ajuste manual só quando souber de algo que ainda não apareceu aqui.</p>
       <div class="bloco-alerta">
         <div class="cab">
           <b>Defesa Civil</b>
@@ -400,6 +424,20 @@ table.origens input{width:100%}
     <div id="g-ens" class="grafico"></div>
   </section>
 
+  <section class="secao" aria-labelledby="t-alag">
+    <h2 id="t-alag">Probabilidade de alagamento</h2>
+    <p class="sub">Chance de haver alagamento registrado em São José no período do turno, estimada por regressão logística a partir da chuva em 1 h e em 3 h, da chuva das 72 h anteriores e da maré. Alertas de ressaca somam um acréscimo à maré prevista.</p>
+    <div class="alag">
+      <div id="alag"></div>
+      <div>
+        <h3>Maré prevista</h3>
+        <div id="g-mare" class="grafico"></div>
+      </div>
+    </div>
+    <h3 style="margin-top:22px">Nível dos rios</h3>
+    <div id="rios"></div>
+  </section>
+
   <section class="secao" aria-labelledby="t-metodos">
     <h2 id="t-metodos">Três formas de decidir</h2>
     <p class="sub">Cada método olha os mesmos dados de um jeito diferente. A recomendação final combina os três e nunca fica abaixo do que o alerta oficial indica.</p>
@@ -434,8 +472,9 @@ table.origens input{width:100%}
           <select id="reg-decisao"></select>
         </label>
         <label class="campo">Observação
-          <input type="text" id="reg-obs" placeholder="Ex.: houve alagamento na BR-101">
+          <input type="text" id="reg-obs" placeholder="Ex.: alagamento na BR-101 em Barreiros">
         </label>
+        <label class="campo" style="flex-direction:row;gap:8px;align-items:center;grid-column:1/-1"><input type="checkbox" id="reg-alag"> Houve alagamento no deslocamento ou no câmpus (alimenta a calibração)</label>
       </div>
       <div class="acoes" style="margin-top:0;margin-bottom:12px">
         <button type="button" class="btn" id="btn-registrar">Registrar decisão</button>
@@ -510,6 +549,22 @@ table.origens input{width:100%}
     </fieldset>
 
     <fieldset>
+      <legend>Alagamento, maré e rios</legend>
+      <p>O modelo de alagamento usa a chuva em 1 h e em 3 h, a chuva das 72 h anteriores e a maré. Enquanto não for calibrado com o histórico de ocorrências, ele aparece no painel mas não entra na decisão, a menos que a opção abaixo seja mudada.</p>
+      <div class="campos">
+        <label class="campo">Alagamento na decisão
+          <select data-cfg="alagamento.usar"><option value="auto">Automático (só com modelo calibrado)</option><option value="sim">Sempre</option><option value="nao">Nunca</option></select>
+          <small>Quando entra, o método custo-perda usa a maior entre a probabilidade de chuva forte e a de alagamento</small></label>
+        <label class="campo">Latitude do ponto de maré <input type="text" data-cfg="alagamento.mareLat" placeholder="automático"><small>Vazio: primeiro ponto com dados entre a Baía Norte e o mar aberto</small></label>
+        <label class="campo">Longitude do ponto de maré <input type="text" data-cfg="alagamento.mareLon" placeholder="automático"></label>
+        <label class="campo">Acréscimo de maré por ressaca (m) <input type="text" data-cfg="alagamento.acrescimoRessaca" data-tipo="lista"><small>Nenhum, moderado, alto, severo ou mais</small></label>
+        <label class="campo">Probabilidade por nível, rios <input type="text" data-cfg="probAlerta.rio" data-tipo="lista"><small>Normal, atenção, alerta, emergência</small></label>
+      </div>
+      <p style="margin-top:14px">Cotas de referência dos rios, em cm, na régua da estação da ANA. Sem cotas, o painel mostra o nível e a variação, mas o rio não entra no índice. A Sala de Situação ANA/Epagri/Ciram informa as cotas de cada estação.</p>
+      <div class="rolagem"><table class="origens"><thead><tr><th>Estação</th><th>Atenção</th><th>Alerta</th><th>Emergência</th></tr></thead><tbody id="cotas-corpo"></tbody></table></div>
+    </fieldset>
+
+    <fieldset>
       <legend>Áreas de risco</legend>
       <p>Para uso oficial, importe a setorização de áreas de risco do Serviço Geológico do Brasil (SGB) dos municípios da região, em GeoJSON (WGS 84) ou KML. O tipo (deslizamento ou inundação) e o grau (alto ou muito alto) são lidos dos atributos quando existirem.</p>
       <div class="acoes" style="margin-top:0">
@@ -538,6 +593,55 @@ table.origens input{width:100%}
     </fieldset>
   </details>
 
+  <details class="cfg" id="calibracao">
+    <summary>Calibração do modelo de alagamento</summary>
+    <fieldset>
+      <legend>1. Ocorrências de alagamento</legend>
+      <p>CSV com uma linha por ocorrência e ao menos a coluna <code>data</code> (dd/mm/aaaa ou aaaa-mm-dd). Colunas opcionais: <code>municipio</code>, para filtrar o município abaixo, e <code>tipo</code>, para manter só alagamentos, inundações e enxurradas (também aceita códigos COBRADE 1.2). A fonte ideal é o registro de ocorrências da Defesa Civil de São José; eventos com decreto ou reconhecimento federal também aparecem no S2iD. Cada dia com pelo menos uma ocorrência conta como dia com alagamento.</p>
+      <div class="campos">
+        <label class="campo">Município <input type="text" id="cal-mun" value="São José"></label>
+      </div>
+      <div class="acoes" style="align-items:center">
+        <label class="btn sec" style="display:inline-block">Escolher CSV de ocorrências<input type="file" id="cal-ocorr" accept=".csv,.txt" hidden></label>
+        <label style="font-size:14px"><input type="checkbox" id="cal-log" checked> Incluir os dias marcados com alagamento no registro de decisões</label>
+      </div>
+      <p class="nota" id="cal-ocorr-info"></p>
+    </fieldset>
+    <fieldset>
+      <legend>2. Período e dados</legend>
+      <p>Use o período em que o registro de ocorrências foi mantido de forma contínua: os dias sem ocorrência dentro dele contam como dias sem alagamento. A chuva pode vir da reanálise horária do Open-Meteo (automática, mas suaviza os picos) ou dos CSVs dos pluviômetros do CEMADEN baixados no Mapa Interativo (mais fiel). A maré vem do histórico do Open-Meteo Marine quando ele cobrir o período.</p>
+      <div class="campos">
+        <label class="campo">Início <input type="date" id="cal-ini"></label>
+        <label class="campo">Fim <input type="date" id="cal-fim"></label>
+        <label class="campo">Chuva
+          <select id="cal-chuva"><option value="openmeteo">Open-Meteo, reanálise (automático)</option><option value="cemaden">Pluviômetros do CEMADEN (CSV)</option></select></label>
+        <label class="campo">Horário dos CSVs do CEMADEN
+          <select id="cal-pluv-fuso"><option value="utc">UTC (padrão do CEMADEN)</option><option value="br">Horário de Brasília</option></select></label>
+      </div>
+      <div class="acoes" style="align-items:center">
+        <label class="btn sec" style="display:inline-block">Escolher CSVs do CEMADEN<input type="file" id="cal-pluv" accept=".csv,.txt" multiple hidden></label>
+        <label style="font-size:14px"><input type="checkbox" id="cal-mare" checked> Incluir a maré</label>
+      </div>
+      <p class="nota" id="cal-pluv-info"></p>
+    </fieldset>
+    <div class="acoes" style="margin-top:0">
+      <button type="button" class="btn" id="btn-calibrar">Calibrar</button>
+    </div>
+    <p class="nota" id="cal-status" aria-live="polite"></p>
+    <div id="cal-res"></div>
+    <div class="acoes" id="cal-acoes" hidden>
+      <button type="button" class="btn" id="btn-cal-usar">Usar neste navegador</button>
+      <button type="button" class="btn sec" id="btn-cal-baixar">Baixar modelo-alagamento.json</button>
+      <button type="button" class="btn sec" id="btn-cal-dias">Exportar tabela diária (CSV)</button>
+    </div>
+    <p class="nota">Para que todos os navegadores usem o modelo calibrado, envie o arquivo <code>modelo-alagamento.json</code> para a pasta <code>dados/</code> do repositório. Um modelo escolhido neste navegador tem prioridade sobre o do repositório.</p>
+    <div class="acoes">
+      <label class="btn sec" style="display:inline-block">Carregar modelo (.json)<input type="file" id="cal-carregar" accept=".json" hidden></label>
+      <button type="button" class="btn sec" id="btn-cal-ref">Descartar o modelo deste navegador</button>
+    </div>
+    <p class="nota" id="cal-modelo-atual"></p>
+  </details>
+
   <details class="cfg" id="metodologia">
     <summary>Metodologia e limitações</summary>
     <div class="metodologia">
@@ -550,6 +654,9 @@ table.origens input{width:100%}
         <li><b>Defesa Civil</b>: alertas publicados no IDAP (Interface de Divulgação de Alertas Públicos) em formato CAP 1.2, o canal que dispara o SMS 40199 e o Defesa Civil Alerta. Cada alerta traz polígono e códigos IBGE. Os níveis seguem a Portaria MIDR nº 2.458/2026 (baixo, moderado, alto, severo e extremo); quando o alerta não informa o nível por extenso, ele é deduzido da severidade CAP.</li>
         <li><b>CEMADEN</b>: chuva medida pelos pluviômetros automáticos (dados abertos). Ela substitui a estimativa do modelo nas horas que já passaram. As estações são associadas ao município pelo código (que começa com o código IBGE do município) e só entram janelas sem falhas de transmissão maiores que 2 h. Se a coleta automática falhar, um CSV baixado do Mapa Interativo pode ser importado no painel. O CEMADEN não publica API de alertas; seus alertas seguem para a Defesa Civil, que os divulga pelo IDAP. Um nível informado pela Direção pode ser lançado manualmente.</li>
         <li><b>Áreas de risco</b>: base inicial com posições aproximadas; a referência oficial é a setorização do SGB, que pode ser importada.</li>
+        <li><b>Maré</b>: nível do mar previsto pelo Open-Meteo Marine, em metros em relação ao nível médio, no primeiro ponto com dados entre a Baía Norte e o mar aberto a leste da Ilha. Inclui a maré astronômica e o efeito da pressão atmosférica, mas não o empilhamento de água pelo vento (maré meteorológica), e tem precisão limitada perto da costa.</li>
+        <li><b>Rios</b>: nível nas estações telemétricas da ANA na bacia do rio Cubatão do Sul (Poço Fundo, em Santo Amaro da Imperatriz, e ETA Casan montante, em Palhoça), monitoradas pela Sala de Situação ANA/Epagri/Ciram. O coletor usa o Hidro-WebService da ANA, que exige credenciais gratuitas solicitadas em hidro@ana.gov.br.</li>
+        <li><b>Classe dos alertas</b>: cada alerta é classificado pelo evento e pelo título. Chuva, tempestade, alagamento, inundação, enxurrada, deslizamento, granizo e vendaval entram no índice como antes. Ressaca, maré e ventos costeiros (classe costeiro) não contam como alerta de chuva: pedem no máximo atenção e somam um acréscimo à maré no modelo de alagamento. Temperatura, umidade, geada, estiagem e afins (classe outro) são só informativos. Na dúvida, o alerta conta como chuva.</li>
       </ul>
       <h3>1. Índice ponderado (IRC)</h3>
       <p>Para cada município <i>i</i> e fator <i>k</i> (intensidade máxima na janela, acumulado desde 6 h antes do deslocamento até o fim do turno, chuva das 72 h anteriores, rajada máxima e alerta oficial), o valor observado vira um perigo <code>h<sub>k</sub> ∈ [0, 1]</code> pelos limiares configurados. O perigo do município é <code>H<sub>i</sub> = Σ w<sub>k</sub> h<sub>k</sub></code>. O perigo regional mistura a média ponderada pela parcela de estudantes com o pior município: <code>H = 0,7 Σ s<sub>i</sub> H<sub>i</sub> + 0,3 max H<sub>i</sub></code>. A exposição <code>E</code> mede quanto as áreas de risco são ativadas (deslizamento responde mais à chuva antecedente; inundação, à intensidade). O índice é <code>IRC = 100 [(1 − λ) H + λ E]</code>, com λ igual ao peso da exposição. Se a opção de piso estiver ligada, alertas oficiais elevam o índice a no mínimo 25, 50 ou 75 pontos.</p>
@@ -559,11 +666,15 @@ table.origens input{width:100%}
       <p>A decisão segue o modelo clássico custo-perda: suspender custa <i>C</i> (aula perdida, reposição) e manter durante um evento custa <i>L</i> (estudantes expostos no deslocamento). Suspender é a escolha de menor custo esperado quando <code>P ≥ C/L</code>. Uma razão de 0,30 significa que a Direção aceita suspender em vão cerca de duas vezes para cada vez em que evita um evento perigoso.</p>
       <h3>3. Inteligência artificial</h3>
       <p>Um sistema de inferência fuzzy do tipo Mamdani, executado no navegador, recebe quatro entradas (chuva prevista, saturação do solo, alerta oficial e exposição), aplica 12 regras escritas em linguagem natural e calcula o grau de suspensão pelo centroide. As regras disparadas aparecem na tela, então a decisão pode ser auditada. O parecer por modelo de linguagem é opcional e apenas comenta os números do painel.</p>
+      <h3>4. Probabilidade de alagamento</h3>
+      <p>Uma regressão logística estima a chance de haver alagamento registrado em São José a partir de quatro variáveis medidas na janela do turno: chuva máxima em 1 h (<i>r</i><sub>1</sub>), chuva máxima em 3 h (<i>r</i><sub>3</sub>), chuva das 72 h anteriores (<i>a</i>) e maré máxima (<i>m</i>, em metros acima do nível médio, mais o acréscimo por alerta de ressaca): <code>P = 1 / (1 + e<sup>−z</sup>)</code>, com <code>z = β<sub>0</sub> + β<sub>1</sub> r<sub>1</sub> + β<sub>2</sub> r<sub>3</sub> + β<sub>3</sub> a + β<sub>4</sub> m</code>. A chuva vem de cada membro do ensemble e a probabilidade é a média sobre os membros, de modo que a incerteza da previsão entra no resultado. Nas horas que já passaram, a chuva medida nos pluviômetros substitui a prevista quando é maior.</p>
+      <p>Os coeficientes de fábrica são de especialista (cerca de 1% num dia seco e 50% com 30 mm/h e 40 mm em 3 h) e servem só para mostrar o funcionamento: nesse estado o resultado aparece no painel mas não entra na decisão. A calibração usa as ocorrências registradas pela Defesa Civil. Cada dia do período vira uma linha, com alagamento (1) ou não (0) e as quatro variáveis medidas entre 0 h e 24 h. O ajuste é por máxima verossimilhança com penalização L2 sobre as variáveis padronizadas, e a validação cruzada estratificada em 5 partes informa a AUC, o escore de Brier e a tabela de confiabilidade. Com o modelo calibrado, o método custo-perda passa a usar a maior entre a probabilidade de chuva forte e a de alagamento. Como o modelo é diário e a janela do turno cobre cerca de 12 h, a probabilidade do turno tende a ser um pouco conservadora para cima.</p>
       <h3>Combinação</h3>
-      <p>Por padrão, a recomendação é a mediana dos três métodos. Com o piso ligado, nunca fica abaixo do nível indicado pelo alerta oficial (moderado ou amarelo pedem atenção; alto ou laranja pedem flexibilização; severo, extremo ou vermelho pedem suspensão).</p>
+      <p>Por padrão, a recomendação é a mediana dos três métodos. Com o piso ligado, nunca fica abaixo do nível indicado pelo alerta oficial de chuva (moderado ou amarelo pedem atenção; alto ou laranja pedem flexibilização; severo, extremo ou vermelho pedem suspensão). Um rio acima da cota de atenção, alerta ou emergência funciona como alerta para os municípios da bacia no dia de hoje, e um alerta costeiro pede no máximo atenção.</p>
       <h3>Limitações</h3>
       <ul>
         <li>Pesos, limiares e probabilidades por alerta são valores de especialista e ainda não foram calibrados com o histórico do câmpus. O registro de decisões existe para permitir essa calibração.</li>
+        <li>O modelo de alagamento só tem valor estatístico depois de calibrado com um registro de ocorrências contínuo e com pelo menos uns 20 dias de alagamento. A maré prevista não inclui o efeito do vento, e a drenagem urbana de cada bairro não entra no modelo.</li>
         <li>A previsão tem resolução de alguns quilômetros e não representa chuvas muito localizadas.</li>
         <li>Sem o coletor (por exemplo, abrindo o arquivo fora do GitHub Pages), o painel tenta o INMET direto ou pelo Worker, e a Defesa Civil fica no ajuste manual.</li>
         <li>Os formatos do IDAP, do INMET e do CEMADEN não têm documentação pública estável. O coletor registra o que encontrou em <code>dados/alertas.json</code> (campo <code>diagnostico</code>) para facilitar ajustes.</li>
@@ -577,6 +688,9 @@ table.origens input{width:100%}
         <li>Brasil. Ministério da Integração e do Desenvolvimento Regional. Portaria MIDR nº 2.458, de 30 de julho de 2026 (Idap e Defesa Civil Alerta).</li>
         <li>Serviço Geológico do Brasil. Setorização de áreas de risco geológico (repositório RIGEO).</li>
         <li>Zippenfenig, P. Open-Meteo.com Weather API. Zenodo. doi:10.5281/zenodo.7970649.</li>
+        <li>Hosmer, D. W.; Lemeshow, S.; Sturdivant, R. X. (2013). <i>Applied Logistic Regression</i>. 3. ed. Wiley.</li>
+        <li>Brier, G. W. (1950). Verification of forecasts expressed in terms of probability. <i>Monthly Weather Review</i>, 78(1).</li>
+        <li>Agência Nacional de Águas e Saneamento Básico. Hidro-WebService: tutorial de serviço para consumo de dados (2025).</li>
       </ul>
     </div>
   </details>
@@ -585,7 +699,7 @@ table.origens input{width:100%}
 <footer class="rodape">
   <div class="wrap">
     <p><b>RISCO.sj</b> versão <span id="versao"></span>, 2026. Ramon Mayor Martins, IFSC Câmpus São José, Área de Telecomunicações. Contato: <a href="mailto:ramon.mayor@ifsc.edu.br">ramon.mayor@ifsc.edu.br</a></p>
-    <p>Dados: Open-Meteo (CC BY 4.0), INMET, CEMADEN, Defesa Civil de Santa Catarina e Serviço Geológico do Brasil. Mapa: Esri e colaboradores do OpenStreetMap, ou CARTO quando configurado.</p>
+    <p>Dados: Open-Meteo e Open-Meteo Marine (CC BY 4.0), INMET, CEMADEN, ANA, Defesa Civil de Santa Catarina e Serviço Geológico do Brasil. Mapa: Esri e colaboradores do OpenStreetMap, ou CARTO quando configurado.</p>
     <p>Ferramenta de apoio à decisão. Não substitui os alertas e comunicados oficiais da Defesa Civil. Em emergência, ligue 199 (Defesa Civil) ou 193 (Bombeiros).</p>
   </div>
 </footer>
@@ -596,9 +710,9 @@ table.origens input{width:100%}
 'use strict';
 
 /* ================= constantes ================= */
-const VERSAO = '1.2';
+const VERSAO = '1.3';
 const TZ = 'America/Sao_Paulo';
-const CHAVE_CFG = 'riscosj.cfg.v1', CHAVE_LOG = 'riscosj.log.v1', CHAVE_AREAS = 'riscosj.areas.v1';
+const CHAVE_CFG = 'riscosj.cfg.v1', CHAVE_LOG = 'riscosj.log.v1', CHAVE_AREAS = 'riscosj.areas.v1', CHAVE_MODELO = 'riscosj.modelo.v1';
 const DEMO = new URLSearchParams(location.search).has('demo');
 
 const DC_NOMES = ['Nenhum', 'Baixo', 'Moderado', 'Alto', 'Severo', 'Extremo'];
@@ -608,6 +722,30 @@ const CEM_NOMES = ['Nenhum', 'Moderado', 'Alto', 'Muito alto'];
 const H_DC = [0, 0.15, 0.35, 0.6, 0.85, 1];
 const H_INMET = [0, 0.35, 0.65, 1];
 const H_CEM = [0, 0.35, 0.65, 0.95];
+const RIO_NOMES = ['Normal', 'Atenção', 'Alerta', 'Emergência'];
+const COS_NOMES = ['Nenhum', 'Moderado', 'Alto', 'Severo'];
+
+// Classe do alerta: chuva entra no índice; costeiro (ressaca, ventos costeiros) alimenta o módulo de
+// alagamento e pede no máximo atenção; outro (temperatura, umidade e afins) é só informativo.
+const RE_CHUVA = /chuv|tempest|tempora|alag|inund|enchent|enxurr|desliz|movimento de massa|granizo|ciclone|vendaval|tornado|\braios?\b/;
+const RE_COSTEIRO = /ressaca|costeir|\bmare\b|agitacao (do )?mar|ondas? (alta|grande)|erosao costeira/;
+const RE_OUTRO = /temperatura|\bfrio\b|calor|geada|umidade|estiagem|\bseca\b|incendio|queimada|\bneve\b|nevoeiro|qualidade do ar|fumaca|poeira/;
+function classeAlerta(a) {
+  if (a.classe === 'chuva' || a.classe === 'costeiro' || a.classe === 'outro') return a.classe;
+  const t = norm([a.evento, a.titulo, a.desc].filter(Boolean).join(' '));
+  return RE_CHUVA.test(t) ? 'chuva' : RE_COSTEIRO.test(t) ? 'costeiro' : RE_OUTRO.test(t) ? 'outro' : 'chuva';
+}
+
+// Modelo de referência para a probabilidade diária de alagamento em São José. Coeficientes de
+// especialista (não calibrados): chuva seca, cerca de 1%; 30 mm/h com 40 mm em 3 h, cerca de 50%.
+const MODELO_REF = { versao: 1, tipo: 'logistica', calibrado: false, nome: 'Modelo de referência (não calibrado)', escala: 'dia',
+  variaveis: ['r1', 'r3', 'a72', 'mar'], coef: { b0: -4.6, r1: 0.06, r3: 0.05, a72: 0.007, mar: 1.8 }, medias: { r1: 0, r3: 0, a72: 0, mar: 0 } };
+// Pontos de consulta da maré, do mais próximo ao mais seguro (mar aberto a leste da Ilha).
+const MARE_PONTOS = [[-27.50, -48.56], [-27.42, -48.52], [-27.86, -48.57], [-27.60, -48.35]];
+const RIOS_PADRAO = [
+  { codigo: '84100000', nome: 'Rio Cubatão do Sul em Poço Fundo', municipio: 'Santo Amaro da Imperatriz' },
+  { codigo: '84150100', nome: 'Rio Cubatão do Sul na ETA Casan (montante)', municipio: 'Palhoça' }
+];
 
 const NIVEIS = [
   { nome: 'Manter aulas', curto: 'Manter', ico: 'ok', cor: '#32A041',
@@ -654,7 +792,9 @@ const DEFAULTS = {
   },
   ensemble: { acumuladoMM: 45, tresHorasMM: 40, modelos: 'icon_seamless,gfs025,ecmwf_ifs025' },
   custoPerda: 0.30,
-  probAlerta: { dc: [0, 0.05, 0.12, 0.28, 0.55, 0.85], inmet: [0, 0.10, 0.25, 0.55], cemaden: [0, 0.15, 0.35, 0.6] },
+  probAlerta: { dc: [0, 0.05, 0.12, 0.28, 0.55, 0.85], inmet: [0, 0.10, 0.25, 0.55], cemaden: [0, 0.15, 0.35, 0.6], rio: [0, 0.15, 0.35, 0.6] },
+  alagamento: { usar: 'auto', mareLat: '', mareLon: '', acrescimoRessaca: [0, 0.15, 0.3, 0.45] },
+  cotasRios: {},
   consolidacao: 'mediana',
   respeitarPiso: true,
   manual: { dc: -1, dcValidade: 'hoje', dcNota: '', inmet: -1, cemaden: 0 },
@@ -680,9 +820,10 @@ const S = {
   cfg: null, fc: null, ens: null,
   fcEstado: 'pendente', ensEstado: 'pendente', fcErro: '', ensErro: '',
   inmet: { estado: 'pendente', avisos: [] }, dc: { estado: 'pendente', alertas: [] }, pluv: { estado: 'pendente', estacoes: [] }, coletor: null,
+  mare: null, mareEstado: 'pendente', mareErro: '', rios: { estado: 'pendente', estacoes: [] }, modelo: MODELO_REF, modeloFonte: 'padrão do painel', cotasCodigos: '',
   areas: [], areasFonte: 'base',
   janelas: [], R: {}, sel: null,
-  sim: { on: false, ant: 80, acc: 60, int: 35, gust: 70, pens: 50, dc: 3, inmet: 2 },
+  sim: { on: false, ant: 80, acc: 60, int: 35, gust: 70, pens: 50, dc: 3, inmet: 2, mar: 0.3 },
   mapa: null, camadas: {}, atualizado: null, origemGrafico: 0, carregando: false
 };
 
@@ -904,6 +1045,7 @@ async function buscarINMET() {
     if (!alvo.length) return null;
     return {
       desc: a.descricao || a.evento || a.tipo || 'Aviso meteorológico',
+      classe: classeAlerta({ evento: a.descricao || a.evento || a.tipo || '' }),
       sev: sevINMET(a.severidade || a.nivel || a.grau || '', a.aviso_cor || a.cor || ''),
       ini: paraLocal(a.inicio, null) || paraLocal(a.data_inicio, a.hora_inicio),
       fim: paraLocal(a.fim, null) || paraLocal(a.data_fim, a.hora_fim),
@@ -932,13 +1074,44 @@ async function buscarColetor() {
   if (!d || d.versao !== 1 || !d.gerado_em) throw new Error('arquivo do coletor em formato inesperado');
   const gerado = paraLocal(d.gerado_em), idade = paraMin(agoraLocal()) - paraMin(gerado);
   if (idade > IDADE_MAX_COLETOR) throw new Error('arquivo do coletor com mais de 6 h');
-  const conv = a => Object.assign({}, a, { ini: paraLocal(a.inicio), fim: paraLocal(a.fim), poligonos: a.poligonos || [], ibges: a.ibges || [], geocodes: a.geocodes || [] });
+  const conv = a => Object.assign({}, a, { ini: paraLocal(a.inicio), fim: paraLocal(a.fim), poligonos: a.poligonos || [], ibges: a.ibges || [], geocodes: a.geocodes || [], classe: classeAlerta(a) });
   return {
     gerado, idade, fontes: d.fontes || {},
     dc: (d.defesa_civil || []).map(conv),
     inmet: (d.inmet || []).map(a => Object.assign(conv(a), { desc: a.titulo || a.evento || 'Aviso meteorológico', sev: Math.min(3, Math.max(1, +a.nivel || 1)) })),
-    pluv: (d.pluviometros || []).filter(e => e && e.acc).map(e => Object.assign({}, e, { quando: e.quando ? paraLocal(e.quando) : null }))
+    pluv: (d.pluviometros || []).filter(e => e && e.acc).map(e => Object.assign({}, e, { quando: e.quando ? paraLocal(e.quando) : null })),
+    rios: (d.rios || []).filter(r => r && r.codigo && r.nivel_cm !== null && r.nivel_cm !== undefined).map(r => Object.assign({}, r, { quando: r.quando ? paraLocal(r.quando) : null }))
   };
+}
+
+/* ----- maré (Open-Meteo Marine) ----- */
+async function buscarMare() {
+  const c = S.cfg.alagamento || {}, la = parseFloat(String(c.mareLat).replace(',', '.')), lo = parseFloat(String(c.mareLon).replace(',', '.'));
+  const pts = !isNaN(la) && !isNaN(lo) ? [[la, lo]] : MARE_PONTOS;
+  const url = 'https://marine-api.open-meteo.com/v1/marine?latitude=' + pts.map(p => p[0]).join(',') + '&longitude=' + pts.map(p => p[1]).join(',') +
+    '&hourly=sea_level_height_msl,wave_height&past_days=3&forecast_days=3&timezone=' + encodeURIComponent(TZ);
+  const r = await buscarJSON(url, 25000);
+  const arr = Array.isArray(r) ? r : [r];
+  const num_ = v => (v === null || v === undefined) ? NaN : +v;
+  for (let i = 0; i < arr.length; i++) {
+    const h = (arr[i] && arr[i].hourly) || {}, nv = (h.sea_level_height_msl || []).map(num_);
+    if (h.time && nv.filter(v => !isNaN(v)).length >= 24) return { tm: h.time.map(paraMin), nivel: nv, onda: (h.wave_height || []).map(num_), ponto: pts[i] };
+  }
+  throw new Error('nenhum dos pontos consultados tem nível do mar');
+}
+
+/* ----- modelo de alagamento: navegador, repositório ou referência ----- */
+function validarModelo(m) {
+  const ok = ['r1', 'r3', 'a72', 'mar'];
+  return !!m && m.tipo === 'logistica' && Array.isArray(m.variaveis) && m.variaveis.length > 0 && m.variaveis.every(v => ok.indexOf(v) >= 0) &&
+    !!m.coef && isFinite(+m.coef.b0) && m.variaveis.every(v => isFinite(+m.coef[v]));
+}
+async function carregarModelo() {
+  try { const m = JSON.parse(localStorage.getItem(CHAVE_MODELO) || 'null'); if (validarModelo(m)) { S.modelo = m; S.modeloFonte = 'este navegador'; return; } } catch (e) {}
+  if (!DEMO) {
+    try { const m = await buscarJSON('dados/modelo-alagamento.json?t=' + Date.now(), 8000); if (validarModelo(m)) { S.modelo = m; S.modeloFonte = 'repositório (dados/modelo-alagamento.json)'; return; } } catch (e) {}
+  }
+  S.modelo = MODELO_REF; S.modeloFonte = 'padrão do painel';
 }
 
 /* ----- pluviômetros: chuva medida nas horas que já passaram ----- */
@@ -1048,19 +1221,47 @@ function sobrepoe(a, j) { const i = a.ini ? paraMin(a.ini) : -Infinity, f = a.fi
 const temDados = () => S.sim.on || !!S.fc;
 function nivelDe(x) { return x < 0.25 ? 0 : x < 0.45 ? 1 : x < 0.65 ? 2 : x < 0.80 ? 3 : 4; }
 
+function cotasRio(r) {
+  const ct = (S.cfg.cotasRios || {})[r.codigo];
+  if (Array.isArray(ct) && ct.some(v => +v > 0)) return ct.map(v => +v > 0 ? +v : null);
+  if (r.cotas && typeof r.cotas === 'object') { const c = [r.cotas.atencao, r.cotas.alerta, r.cotas.emergencia].map(v => +v > 0 ? +v : null); if (c.some(v => v)) return c; }
+  return null;
+}
+function estadoRio(r) {
+  const ct = cotasRio(r);
+  if (ct) { let e = 0; ct.forEach((v, i) => { if (v && +r.nivel_cm >= v) e = i + 1; }); return e; }
+  return (r.estado === null || r.estado === undefined) ? null : +r.estado;
+}
+const rioRecente = r => !!r.quando && paraMin(agoraLocal()) - paraMin(r.quando) <= 360;
+function nivelRio(o) {
+  let n = 0;
+  S.rios.estacoes.forEach(r => { if (o.ibge && (r.ibges || []).indexOf(o.ibge) >= 0 && rioRecente(r)) n = Math.max(n, estadoRio(r) || 0); });
+  return n;
+}
 function alertaPara(j, o) {
   const c = S.cfg, m = c.manual;
-  let dc = 0, inmet = 0, cem = 0;
+  let dc = 0, inmet = 0, cem = 0, rio = 0, cos = 0;
   if (S.sim.on) { dc = +S.sim.dc; inmet = +S.sim.inmet; }
   else {
     if (+m.dc >= 0) { if (+m.dc > 0 && (j.dia === 'hoje' || m.dcValidade === 'amanha')) dc = +m.dc; }
-    else S.dc.alertas.forEach(a => { if (atinge(a, o) && sobrepoe(a, j)) dc = Math.max(dc, Math.min(5, +a.nivel || 0)); });
+    else S.dc.alertas.forEach(a => {
+      if (!atinge(a, o) || !sobrepoe(a, j)) return;
+      const cl = classeAlerta(a), n = Math.min(5, +a.nivel || 0);
+      if (cl === 'chuva') dc = Math.max(dc, n);
+      else if (cl === 'costeiro') cos = Math.max(cos, n >= 4 ? 3 : n >= 3 ? 2 : n >= 2 ? 1 : 0);
+    });
     if (+m.inmet >= 0) inmet = +m.inmet;
-    else S.inmet.avisos.forEach(a => { if (atinge(a, o) && sobrepoe(a, j)) inmet = Math.max(inmet, a.sev); });
+    else S.inmet.avisos.forEach(a => {
+      if (!atinge(a, o) || !sobrepoe(a, j)) return;
+      const cl = classeAlerta(a);
+      if (cl === 'chuva') inmet = Math.max(inmet, a.sev);
+      else if (cl === 'costeiro') cos = Math.max(cos, Math.min(3, a.sev));
+    });
     if (+m.cemaden > 0 && j.dia === 'hoje') cem = +m.cemaden;
+    if (j.dia === 'hoje') rio = nivelRio(o);
   }
-  const pa = c.probAlerta;
-  return { dc, inmet, cem, h: Math.max(H_DC[dc] || 0, H_INMET[inmet] || 0, H_CEM[cem] || 0), pOf: Math.max(pa.dc[dc] || 0, pa.inmet[inmet] || 0, pa.cemaden[cem] || 0) };
+  const pa = c.probAlerta, pr = pa.rio || DEFAULTS.probAlerta.rio;
+  return { dc, inmet, cem, rio, cos, h: Math.max(H_DC[dc] || 0, H_INMET[inmet] || 0, H_CEM[cem] || 0, H_CEM[rio] || 0), pOf: Math.max(pa.dc[dc] || 0, pa.inmet[inmet] || 0, pa.cemaden[cem] || 0, pr[rio] || 0) };
 }
 function valoresOrigem(j, i) {
   if (S.sim.on) { const s = S.sim; return { int: +s.int, acc: +s.acc, ant: +s.ant, gust: +s.gust, pop: Math.min(100, 30 + 0.7 * s.pens) }; }
@@ -1089,6 +1290,54 @@ function probMet(j, x0) {
   }
   const z = Math.max(x0.acc / T.acumuladoMM, (x0.int * 2.2) / T.tresHorasMM);
   return { p: clamp((x0.pop / 100) / (1 + Math.exp(-7 * (z - 0.85)))), fonte: 'aproximação', accs: [] };
+}
+
+/* ----- probabilidade de alagamento (regressão logística) ----- */
+function pAlag(M, f) {
+  let z = +M.coef.b0 || 0;
+  M.variaveis.forEach(v => { const x = f[v], subst = M.medias && M.medias[v] !== undefined ? +M.medias[v] : 0; z += (+M.coef[v] || 0) * ((x === null || x === undefined || isNaN(x)) ? subst : x); });
+  return 1 / (1 + Math.exp(-z));
+}
+function extremoMare(j, campo) {
+  if (!S.mare) return null;
+  let m = -Infinity;
+  idxInst(S.mare.tm, j.jIni - 360, j.jFim).forEach(i => { const v = S.mare[campo][i]; if (!isNaN(v) && v > m) m = v; });
+  return isFinite(m) ? m : null;
+}
+function probAlagamento(j, x0, cos) {
+  const M = S.modelo, c = S.cfg.alagamento || DEFAULTS.alagamento;
+  const ac = +((c.acrescimoRessaca || DEFAULTS.alagamento.acrescimoRessaca)[cos] || 0);
+  const usar = c.usar === 'sim' || (c.usar !== 'nao' && !!M.calibrado);
+  const marPrev = S.sim.on ? +S.sim.mar : extremoMare(j, 'nivel');
+  const base = { a72: x0.ant, mar: marPrev === null ? null : marPrev + ac, marPrev, acrescimo: ac, onda: S.sim.on ? null : extremoMare(j, 'onda') };
+  const fim = o => Object.assign(o, { usar, f: Object.assign(base, { r1: o.r1, r3: o.r3 }) });
+  if (S.sim.on) {
+    const r1 = +S.sim.int, r3 = Math.max(r1, Math.min(+S.sim.acc, 2.2 * r1));
+    return fim({ p: pAlag(M, Object.assign({}, base, { r1, r3 })), fonte: 'simulação', n: 1, r1, r3 });
+  }
+  let r1o = 0, r3o = 0;
+  const est = estacoesDaOrigem(0), agora = paraMin(agoraLocal());
+  if (est.length && j.jIni - 360 <= agora && j.jFim > agora) { r1o = chuvaMedida(est, 1) || 0; r3o = chuvaMedida(est, 3) || 0; }
+  if (S.ens) {
+    const iw = idxJan(S.ens.tm, j.jIni - 360, j.jFim), r1s = [], r3s = [];
+    let soma = 0;
+    if (iw.length) for (const mb of S.ens.membros) {
+      let r1 = 0, r3 = 0, ok = true;
+      for (const i of iw) {
+        const v = mb.v[i]; if (isNaN(v)) { ok = false; break; }
+        if (v > r1) r1 = v;
+        if (i >= 2) { const s3 = v + mb.v[i - 1] + mb.v[i - 2]; if (!isNaN(s3) && s3 > r3) r3 = s3; }
+      }
+      if (!ok) continue;
+      r1 = Math.max(r1, r1o); r3 = Math.max(r3, r3o, r1);
+      soma += pAlag(M, Object.assign({}, base, { r1, r3 })); r1s.push(r1); r3s.push(r3);
+    }
+    if (r1s.length >= 5) return fim({ p: soma / r1s.length, fonte: 'ensemble', n: r1s.length, r1: quantil(r1s, 0.5), r3: quantil(r3s, 0.5) });
+  }
+  const f = S.fc && S.fc[0];
+  const r1 = Math.max(f ? maxIdx(f.p, idxJan(f.tm, j.jIni - 360, j.jFim)) : 0, r1o);
+  const r3 = Math.max(f ? nz(max3h(f.tm, f.p, j.jIni - 360, j.jFim)) : 0, r3o, r1);
+  return fim({ p: pAlag(M, Object.assign({}, base, { r1, r3 })), fonte: 'determinística', n: 1, r1, r3 });
 }
 
 /* ----- inferência fuzzy (Mamdani) ----- */
@@ -1146,17 +1395,21 @@ function avaliar(j) {
   const ats = areas.map(x => x.at);
   const E = ats.length ? 0.5 * (ats.reduce((s, v) => s + v, 0) / ats.length) + 0.5 * Math.max.apply(null, ats) : 0;
   const ew = clamp((+c.pesoExposicao || 0) / 100);
-  const A = { dc: Math.max.apply(null, por.map(r => r.A.dc)), inmet: Math.max.apply(null, por.map(r => r.A.inmet)), cem: Math.max.apply(null, por.map(r => r.A.cem)), pOf: Math.max.apply(null, por.map(r => r.A.pOf)) };
+  const mx = k => Math.max.apply(null, por.map(r => r.A[k]));
+  const A = { dc: mx('dc'), inmet: mx('inmet'), cem: mx('cem'), rio: mx('rio'), cos: mx('cos'), pOf: mx('pOf') };
   let piso = 0, nPiso = 0;
   if (c.respeitarPiso) {
-    if (A.dc >= 4 || A.inmet >= 3 || A.cem >= 3) { piso = 75; nPiso = 3; }
-    else if (A.dc >= 3 || A.inmet >= 2 || A.cem >= 2) { piso = 50; nPiso = 2; }
-    else if (A.dc >= 2 || A.inmet >= 1 || A.cem >= 1) { piso = 25; nPiso = 1; }
+    if (A.dc >= 4 || A.inmet >= 3 || A.cem >= 3 || A.rio >= 3) { piso = 75; nPiso = 3; }
+    else if (A.dc >= 3 || A.inmet >= 2 || A.cem >= 2 || A.rio >= 2) { piso = 50; nPiso = 2; }
+    else if (A.dc >= 2 || A.inmet >= 1 || A.cem >= 1 || A.rio >= 1 || A.cos >= 1) { piso = 25; nPiso = 1; }
   }
   const ircBruto = 100 * clamp((1 - ew) * Hreg + ew * E);
   const irc = Math.max(ircBruto, piso);
   const pm = probMet(j, por[0].x);
-  const P = 1 - (1 - pm.p) * (1 - A.pOf);
+  const cosSJ = por[0].A.cos;
+  const al = probAlagamento(j, por[0].x, cosSJ);
+  const pMet = al.usar ? Math.max(pm.p, al.p) : pm.p;
+  const P = 1 - (1 - pMet) * (1 - A.pOf);
   const r = clamp(+c.custoPerda || 0.3, 0.01, 0.99);
   const nIRC = nivelDe(irc / 100);
   const nCL = P >= r ? 3 : P >= 0.8 * r ? 2 : P >= 0.5 * r ? 1 : 0;
@@ -1165,7 +1418,7 @@ function avaliar(j) {
   const cons = c.consolidacao === 'max' ? Math.max.apply(null, ns) : ns.slice().sort((a, b) => a - b)[1];
   let nivel = Math.max(cons, nPiso);
   if (nivel >= 3 && (A.dc >= 4 || A.inmet >= 3 || irc >= 85)) nivel = 4;
-  return { j, por, iMax, hReg, Hreg, E, ew, areas, A, piso, nPiso, ircBruto, irc, pm, P, r, nIRC, nCL, fz, cons, nivel, partes, W };
+  return { j, por, iMax, hReg, Hreg, E, ew, areas, A, piso, nPiso, ircBruto, irc, pm, al, pMet, P, r, nIRC, nCL, fz, cons, nivel, partes, W };
 }
 
 /* ================= textos ================= */
@@ -1174,6 +1427,7 @@ function alertaTexto(A) {
   if (A.dc > 0) p.push('alerta ' + DC_NOMES[A.dc].toLowerCase() + ' da Defesa Civil');
   if (A.inmet > 0) p.push('aviso ' + INMET_NOMES[A.inmet].toLowerCase() + ' do INMET (' + INMET_DESC[A.inmet] + ')');
   if (A.cem > 0) p.push('alerta ' + CEM_NOMES[A.cem].toLowerCase() + ' do CEMADEN');
+  if (A.rio > 0) p.push('rio na cota de ' + RIO_NOMES[A.rio].toLowerCase());
   return p;
 }
 function alertaCurto(A) {
@@ -1181,7 +1435,8 @@ function alertaCurto(A) {
   if (A.dc > 0) c.push({ h: H_DC[A.dc], t: 'Defesa Civil ' + DC_NOMES[A.dc].toLowerCase() });
   if (A.inmet > 0) c.push({ h: H_INMET[A.inmet], t: 'INMET ' + INMET_NOMES[A.inmet].toLowerCase() });
   if (A.cem > 0) c.push({ h: H_CEM[A.cem], t: 'CEMADEN ' + CEM_NOMES[A.cem].toLowerCase() });
-  if (!c.length) return 'Nenhum';
+  if (A.rio > 0) c.push({ h: H_CEM[A.rio], t: 'Rio em ' + RIO_NOMES[A.rio].toLowerCase() });
+  if (!c.length) return A.cos > 0 ? 'Costeiro <small>(ressaca)</small>' : 'Nenhum';
   c.sort((a, b) => b.h - a.h);
   return esc(c[0].t) + (c.length > 1 ? ' <small>e mais ' + (c.length - 1) + '</small>' : '');
 }
@@ -1233,7 +1488,7 @@ function renderTudo() {
   const R = S.R[S.sel];
   if (!R) return;
   renderModo(); renderVeredito(R); renderGrade(); renderFatores(R); renderAlertas(); renderMapa(R);
-  renderGraficoChuva(); renderEnsemble(R); renderMetodos(R); renderComunicado(R); renderFontes(); renderLog();
+  renderGraficoChuva(); renderEnsemble(R); renderAlagamento(R); renderMetodos(R); renderComunicado(R); renderFontes(); renderLog();
 }
 function renderModo() {
   const el = $('#aviso-modo'); const t = [];
@@ -1256,7 +1511,8 @@ function renderVeredito(R) {
   const N = NIVEIS[R.nivel];
   el.dataset.n = R.nivel;
   $('#v-decisao').innerHTML = '<span class="v-ico">' + ICO[N.ico] + '</span><span>' + esc(N.nome) + '</span>';
-  $('#v-porque').textContent = explicar(R) + ' ' + N.acao;
+  const alTxt = R.al.p >= 0.2 ? ' Probabilidade de alagamento em São José: ' + pct(R.al.p) + (R.al.usar ? '' : ', pelo modelo ainda não calibrado') + '.' : '';
+  $('#v-porque').textContent = explicar(R) + alTxt + ' ' + N.acao;
   $('#v-num').innerHTML = [
     ['Índice de risco (IRC)', fmt(R.irc) + '<small> de 100</small>'],
     ['Probabilidade de evento', pct(R.P)],
@@ -1305,6 +1561,18 @@ function periodo(a) {
 }
 const CORES_DC = ['#939598', '#939598', '#E2AE00', '#E0702A', '#C8191E', '#8E0F13'];
 const CORES_INMET = ['#939598', '#E2AE00', '#E0702A', '#C8191E'];
+function tagClasse(a) {
+  const cl = classeAlerta(a);
+  return cl === 'costeiro' ? '<span class="tag" title="Entra no módulo de alagamento como acréscimo de maré e pede no máximo atenção">costeiro</span>'
+    : cl === 'outro' ? '<span class="tag" title="Não entra no índice">informativo</span>' : '';
+}
+function notaClasses(lista) {
+  const cl = lista.map(classeAlerta);
+  const t = [];
+  if (cl.indexOf('costeiro') >= 0) t.push('Alertas costeiros entram no módulo de alagamento e pedem no máximo atenção.');
+  if (cl.indexOf('outro') >= 0) t.push('Alertas informativos (temperatura, umidade e afins) não entram no índice.');
+  return t.length ? '<p class="nota">' + t.join(' ') + '</p>' : '';
+}
 function renderAlertas() {
   const m = S.cfg.manual;
   const ld = $('#lista-dc'), li = $('#lista-inmet'), lc = $('#lista-cem');
@@ -1314,7 +1582,7 @@ function renderAlertas() {
     const rel = S.dc.alertas.filter(a => S.cfg.origens.some(o => atinge(a, o)));
     const fora = S.dc.alertas.length - rel.length;
     ld.innerHTML = rel.length
-      ? '<ul class="avisos">' + rel.map(a => '<li><span class="sev d' + a.nivel + '" title="Nível obtido por: ' + esc(a.nivel_origem || 'não informado') + '">' + DC_NOMES[a.nivel] + '</span>' + esc(a.titulo || a.evento) + '<br><small>' + (a.remetente ? esc(a.remetente) + '. ' : '') + periodo(a) + '. ' + esc(municipiosDoAlerta(a)) + '</small></li>').join('') + '</ul>'
+      ? '<ul class="avisos">' + rel.map(a => '<li><span class="sev d' + a.nivel + '" title="Nível obtido por: ' + esc(a.nivel_origem || 'não informado') + '">' + DC_NOMES[a.nivel] + '</span>' + tagClasse(a) + esc(a.titulo || a.evento) + '<br><small>' + (a.remetente ? esc(a.remetente) + '. ' : '') + periodo(a) + '. ' + esc(municipiosDoAlerta(a)) + '</small></li>').join('') + '</ul>' + notaClasses(rel)
       : '<p class="nota">Nenhum alerta vigente da Defesa Civil para os municípios monitorados' + (fora > 0 ? ' (' + fora + (fora > 1 ? ' alertas próximos não atingem' : ' alerta próximo não atinge') + ' esses pontos)' : '') + '.</p>';
   } else if (S.dc.estado === 'erro') ld.innerHTML = '<p class="nota erro">Alertas automáticos indisponíveis (' + esc(S.dc.erro || 'coletor não encontrado') + '). Confira em <a href="https://www.defesacivil.sc.gov.br/categoria/alerta/" target="_blank" rel="noopener">defesacivil.sc.gov.br</a> e use o ajuste manual.</p>';
   else ld.innerHTML = '<p class="nota">Consultando.</p>';
@@ -1323,7 +1591,7 @@ function renderAlertas() {
   else if (S.inmet.estado === 'ok' || S.inmet.estado === 'demo') {
     const rel = S.inmet.avisos.filter(a => S.cfg.origens.some(o => atinge(a, o)));
     li.innerHTML = rel.length
-      ? '<ul class="avisos">' + rel.map(a => '<li><span class="sev s' + a.sev + '">' + INMET_NOMES[a.sev] + '</span>' + esc(a.desc) + '<br><small>' + periodo(a) + '. ' + esc(a.munTxt || municipiosDoAlerta(a)) + '</small></li>').join('') + '</ul>'
+      ? '<ul class="avisos">' + rel.map(a => '<li><span class="sev s' + a.sev + '">' + INMET_NOMES[a.sev] + '</span>' + tagClasse(a) + esc(a.desc) + '<br><small>' + periodo(a) + '. ' + esc(a.munTxt || municipiosDoAlerta(a)) + '</small></li>').join('') + '</ul>' + notaClasses(rel)
       : '<p class="nota">Nenhum aviso ativo para os municípios monitorados.</p>';
   } else if (S.inmet.estado === 'erro') li.innerHTML = '<p class="nota erro">Consulta automática indisponível (' + esc(S.inmet.erro) + '). Confira em <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">alertas2.inmet.gov.br</a> e informe o nível acima.</p>';
   else li.innerHTML = '<p class="nota">Consultando.</p>';
@@ -1356,6 +1624,8 @@ function renderFontes() {
     ['Defesa Civil'].concat(+m.dc >= 0 ? ['man', 'ajuste manual'] : est(S.dc.estado, conta(relDC, 'alerta', 'alertas'), 'indisponível')),
     ['INMET'].concat(+m.inmet >= 0 ? ['man', 'ajuste manual'] : est(S.inmet.estado, conta(relIN, 'aviso', 'avisos'), 'indisponível')),
     ['Pluviômetros'].concat(S.pluv.estado === 'manual' ? ['man', conta(S.pluv.estacoes.length, 'estação', 'estações') + ' de arquivo'] : est(S.pluv.estado, conta(S.pluv.estacoes.length, 'estação', 'estações'), 'indisponíveis')),
+    ['Maré'].concat(est(S.mareEstado, 'ok', 'indisponível')),
+    ['Rios'].concat(S.rios.estado === 'semcred' ? ['', 'sem credenciais da ANA'] : est(S.rios.estado, conta(S.rios.estacoes.length, 'estação', 'estações'), 'indisponível')),
     ['Coletor'].concat(DEMO ? ['man', 'sintético'] : !col ? ['', 'consultando'] : col.estado === 'ok' ? [col.idade > IDADE_AVISO_COLETOR ? 'erro' : 'ok', (col.idade > IDADE_AVISO_COLETOR ? 'desatualizado, ' : '') + idadeTxt(col.idade)] : ['erro', 'não encontrado'])
   ];
   $('#fontes').innerHTML = itens.map(i => '<span class="fonte ' + i[1] + '"' + (i[0] === 'Coletor' && col && col.erro ? ' title="' + esc(col.erro) + '"' : '') + '>' + i[0] + ': ' + esc(i[2]) + '</span>').join('');
@@ -1554,6 +1824,107 @@ function renderEnsemble(R) {
   box.innerHTML = s;
 }
 
+/* ----- alagamento, maré e rios ----- */
+function efeitoTxt(M, v, x) {
+  if (x === null || x === undefined || isNaN(x)) return 's/d';
+  const f = Math.exp((+M.coef[v] || 0) * x);
+  return '×' + (f >= 10 ? fmt(f) : fmt(f, f < 1.95 ? 2 : 1));
+}
+function renderAlagamento(R) {
+  const box = $('#alag');
+  if (!temDados()) { box.innerHTML = '<p class="vazio">Aguardando dados.</p>'; $('#g-mare').innerHTML = ''; renderRios(); return; }
+  const al = R.al, M = S.modelo, f = al.f, dentro = v => M.variaveis.indexOf(v) >= 0;
+  const selo = M.calibrado
+    ? '<span class="selo ok">Calibrado com ' + fmt(M.n_dias) + ' dias, ' + fmt(M.n_eventos) + ' com alagamento' + (M.auc_cv ? ', AUC ' + fmt(M.auc_cv, 2) : '') + '</span>'
+    : '<span class="selo">Modelo de referência, ainda não calibrado</span>';
+  const uso = al.usar ? 'Entra na probabilidade de evento do método custo-perda.' : 'Apenas informativo: não entra na decisão' + (M.calibrado ? ' (desligado em Configuração).' : ' enquanto o modelo não for calibrado.');
+  const origem = al.fonte === 'ensemble' ? 'Média sobre ' + al.n + ' membros do ensemble; a tabela mostra a mediana dos membros.' : al.fonte === 'simulação' ? 'Valores da simulação.' : 'Ensemble indisponível; calculado com a previsão determinística.';
+  const lin = [
+    ['Chuva máxima em 1 h', fmt(f.r1, 1) + ' mm', 'r1', f.r1],
+    ['Chuva máxima em 3 h', fmt(f.r3, 1) + ' mm', 'r3', f.r3],
+    ['Chuva nas 72 h anteriores', fmt(f.a72) + ' mm' + (R.por[0].x.medidaAnt ? ', medida' : ''), 'a72', f.a72],
+    ['Maré máxima', f.marPrev === null ? 'sem dado, usa o nível médio' : fmt(f.marPrev, 2) + ' m' + (f.acrescimo > 0 ? ' + ' + fmt(f.acrescimo, 2) + ' m de ressaca' : ''), 'mar', f.mar]
+  ];
+  box.innerHTML = '<p class="alag-num">' + pct(al.p) + ' <small>no turno selecionado</small></p>' + selo +
+    '<p class="nota">' + uso + ' ' + origem + '</p>' +
+    '<table class="fat-alag"><thead><tr><th>Fator, na janela do turno</th><th>Valor</th><th>Efeito na chance</th></tr></thead><tbody>' +
+    lin.map(l => '<tr><td>' + l[0] + '</td><td class="num">' + esc(l[1]) + '</td><td class="num">' + (dentro(l[2]) ? efeitoTxt(M, l[2], l[3]) : 'fora do modelo') + '</td></tr>').join('') + '</tbody></table>' +
+    '<p class="nota">O efeito diz por quanto cada fator multiplica a chance de alagamento em relação a um dia sem chuva e com a maré no nível médio. ' +
+    (f.onda !== null && f.onda !== undefined && !isNaN(f.onda) ? 'Onda máxima prevista ao largo: ' + fmt(f.onda, 1) + ' m. ' : '') +
+    'A maré do Open-Meteo inclui a maré astronômica e o efeito da pressão, mas não o empilhamento de água pelo vento; por isso os alertas de ressaca somam um acréscimo.</p>';
+  renderGraficoMare(R); renderRios();
+}
+function renderGraficoMare(R) {
+  const box = $('#g-mare');
+  if (S.sim.on) { box.innerHTML = '<p class="vazio">Sem gráfico no modo simulação; a maré simulada é ' + fmt(S.sim.mar, 2) + ' m.</p>'; return; }
+  if (!S.mare) { box.innerHTML = '<p class="vazio">' + (S.mareEstado === 'erro' ? 'Maré indisponível (' + esc(S.mareErro) + '). O modelo usa o nível médio do mar.' : 'Buscando a previsão de maré.') + '</p>'; return; }
+  const m = S.mare, agora = paraMin(agoraLocal()), a = agora - 24 * 60, b = agora + 48 * 60;
+  const idx = []; for (let k = 0; k < m.tm.length; k++) if (m.tm[k] >= a && m.tm[k] <= b && !isNaN(m.nivel[k])) idx.push(k);
+  if (idx.length < 6) { box.innerHTML = '<p class="vazio">Sem dados de maré para as próximas horas.</p>'; return; }
+  const Wd = Math.max(300, Math.round(box.clientWidth || 560)), Hd = 200, ml = 44, mr = 10, mt = 22, mb = 30, pw_ = Wd - ml - mr, ph = Hd - mt - mb;
+  let lo = Infinity, hi = -Infinity; idx.forEach(k => { lo = Math.min(lo, m.nivel[k]); hi = Math.max(hi, m.nivel[k]); });
+  lo = Math.min(lo, 0) - 0.1; hi = Math.max(hi, 0) + 0.2;
+  const x = t => ml + (t - a) / (b - a) * pw_, y = v => mt + ph - (v - lo) / (hi - lo) * ph;
+  let s = '<svg viewBox="0 0 ' + Wd + ' ' + Hd + '" width="' + Wd + '" height="' + Hd + '" role="img" aria-label="Nível do mar previsto em relação ao nível médio">';
+  const j = R.j;
+  if (j.jFim > a && j.jIni - 360 < b) { const x0 = x(Math.max(j.jIni - 360, a)), x1 = x(Math.min(j.jFim, b)); s += '<rect x="' + x0.toFixed(1) + '" y="' + mt + '" width="' + (x1 - x0).toFixed(1) + '" height="' + ph + '" fill="#DCEFDF" stroke="#1D7A2D" stroke-width="1.5"/>'; }
+  const passo = (hi - lo) > 1.6 ? 0.5 : 0.25;
+  for (let q = Math.ceil(lo / passo); q * passo <= hi + 1e-9; q++) { const v = q * passo; s += '<line x1="' + ml + '" x2="' + (Wd - mr) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="' + (q === 0 ? '#4D5155' : '#E3E5E4') + '"' + (q === 0 ? ' stroke-dasharray="4 4"' : '') + '/><text x="' + (ml - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end" class="g-eixo">' + fmt(v, 2) + '</text>'; }
+  s += '<text x="4" y="' + (mt - 8) + '" class="g-eixo">m</text><text x="' + (Wd - mr - 4) + '" y="' + (y(0) - 5).toFixed(1) + '" text-anchor="end" class="g-ref">nível médio</text>';
+  s += '<path d="M' + idx.map(k => x(m.tm[k]).toFixed(1) + ',' + y(m.nivel[k]).toFixed(1)).join('L') + '" fill="none" stroke="#1C5CAB" stroke-width="2"/>';
+  idx.forEach((k, q) => {
+    if (q === 0 || q === idx.length - 1) return;
+    const v = m.nivel[k];
+    if (v >= m.nivel[idx[q - 1]] && v > m.nivel[idx[q + 1]] && v > 0.05) s += '<circle cx="' + x(m.tm[k]).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="3" fill="#1C5CAB"/><text x="' + x(m.tm[k]).toFixed(1) + '" y="' + (y(v) - 7).toFixed(1) + '" text-anchor="middle" class="g-ref">' + fmt(v, 2) + '</text>';
+  });
+  for (let d = -1; d <= 2; d++) {
+    const dd = somaDias(hojeStr(), d), m0 = paraMin(dd + 'T00:00'), m12 = m0 + 720;
+    if (m0 > a && m0 < b) s += '<line x1="' + x(m0).toFixed(1) + '" x2="' + x(m0).toFixed(1) + '" y1="' + mt + '" y2="' + (mt + ph + 6) + '" stroke="#B9BDBF"/>';
+    if (m12 > a + 120 && m12 < b - 120) s += '<text x="' + x(m12).toFixed(1) + '" y="' + (Hd - 10) + '" text-anchor="middle" class="g-eixo">' + rotuloCurto(dd) + '</text>';
+  }
+  s += '<line x1="' + x(agora).toFixed(1) + '" x2="' + x(agora).toFixed(1) + '" y1="' + mt + '" y2="' + (mt + ph) + '" stroke="#000" stroke-width="1.5"/><text x="' + (x(agora) + 4).toFixed(1) + '" y="' + (mt + ph - 6) + '" class="g-ref">agora</text></svg>';
+  box.innerHTML = s + '<p class="nota">Open-Meteo Marine no ponto ' + fmt(m.ponto[0], 2) + ', ' + fmt(m.ponto[1], 2) + '. Faixa verde: janela do turno selecionado, incluindo as 6 h anteriores.</p>';
+}
+function sparkline(serie) {
+  const v = (serie || []).map(p => +p[1]).filter(x => !isNaN(x));
+  if (v.length < 2) return '<span></span>';
+  const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v), r = (hi - lo) || 1;
+  return '<svg viewBox="0 0 150 36" aria-hidden="true"><polyline points="' + v.map((x, i) => (2 + i / (v.length - 1) * 146).toFixed(1) + ',' + (33 - (x - lo) / r * 30).toFixed(1)).join(' ') + '" fill="none" stroke="#2A78D6" stroke-width="1.6"/></svg>';
+}
+function renderRios() {
+  const box = $('#rios'), st = S.rios;
+  if (st.estado === 'ok' || st.estado === 'demo') {
+    if (!st.estacoes.length) { box.innerHTML = '<p class="nota">Nenhuma estação com leitura recente.</p>'; return; }
+    const agora = paraMin(agoraLocal());
+    box.innerHTML = '<ul class="rios">' + st.estacoes.map(r => {
+      const e = estadoRio(r), idade = r.quando ? agora - paraMin(r.quando) : null, v24 = r.variacao_24h_cm;
+      const varTxt = v24 === null || v24 === undefined ? '' : ', ' + (v24 >= 0 ? 'subiu ' : 'baixou ') + fmt(Math.abs(v24)) + ' cm em 24 h';
+      const ct = cotasRio(r), cotaTxt = ct ? ct.map((v, i) => v ? RIO_NOMES[i + 1].toLowerCase() + ' ' + fmt(v) : '').filter(Boolean).join(', ') + ' cm' : '';
+      const estTxt = e === null ? 'cotas de referência não configuradas' : (e === 0 ? 'abaixo das cotas' : 'acima da cota de ' + RIO_NOMES[e].toLowerCase()) + ' (' + cotaTxt + ')';
+      return '<li><div><b>' + esc(r.nome) + '</b> <small>(' + esc(r.municipio) + ', estação ' + esc(r.codigo) + ')</small><br>' + fmt(r.nivel_cm) + ' cm' + varTxt + '. ' +
+        (e ? '<span class="sev s' + e + '">' + RIO_NOMES[e] + '</span> ' : '') + '<small>' + esc(estTxt) + (idade !== null ? '; leitura ' + idadeTxt(idade) : '') + (idade !== null && idade > 360 ? ', antiga demais para entrar no índice' : '') + '</small></div>' + sparkline(r.serie) + '</li>';
+    }).join('') + '</ul><p class="nota">Estações telemétricas da ANA na bacia do rio Cubatão do Sul, que afeta o deslocamento a partir de Palhoça e Santo Amaro da Imperatriz. Com cotas configuradas, o rio entra no índice como um alerta para esses municípios no dia de hoje. Para os rios Maruim e Forquilhas, em São José, não foi localizada estação telemétrica pública; novas estações podem ser incluídas em <code>coletor/rios.json</code>.</p>';
+  } else if (st.estado === 'semcred') box.innerHTML = '<p class="nota">Nível dos rios indisponível: o coletor precisa das credenciais do Hidro-WebService da ANA (secrets <code>ANA_IDENTIFICADOR</code> e <code>ANA_SENHA</code> no GitHub). Enquanto isso, acompanhe o <a href="https://ciram.epagri.sc.gov.br/rios-online/" target="_blank" rel="noopener">Rios On-line da Epagri/Ciram</a>.</p>';
+  else if (st.estado === 'erro') box.innerHTML = '<p class="nota erro">Nível dos rios indisponível (' + esc(st.erro || 'sem dados') + ').</p>';
+  else box.innerHTML = '<p class="nota">Consultando.</p>';
+}
+function montarCotas() {
+  const tb = $('#cotas-corpo'); if (!tb) return;
+  const lista = S.rios.estacoes.length ? S.rios.estacoes : RIOS_PADRAO;
+  const cods = lista.map(r => r.codigo).join(',');
+  if (cods === S.cotasCodigos) return;
+  S.cotasCodigos = cods;
+  S.cfg.cotasRios = S.cfg.cotasRios || {};
+  tb.innerHTML = lista.map(r => {
+    const c = S.cfg.cotasRios[r.codigo] || (r.cotas ? [r.cotas.atencao, r.cotas.alerta, r.cotas.emergencia] : ['', '', '']);
+    return '<tr><td>' + esc(r.nome) + ' <small>(' + esc(r.codigo) + ')</small></td>' + [0, 1, 2].map(i => '<td><input type="number" min="0" step="1" data-rio="' + esc(r.codigo) + '" data-i="' + i + '" value="' + (c[i] === null || c[i] === undefined ? '' : c[i]) + '" aria-label="Cota de ' + RIO_NOMES[i + 1].toLowerCase() + ', ' + esc(r.nome) + '"></td>').join('') + '</tr>';
+  }).join('');
+  $$('input[data-rio]', tb).forEach(el => el.addEventListener('change', () => {
+    const cod = el.dataset.rio, arr = (S.cfg.cotasRios[cod] || ['', '', '']).slice(), v = parseFloat(el.value);
+    arr[+el.dataset.i] = isNaN(v) ? '' : v; S.cfg.cotasRios[cod] = arr; salvarCfg(); recalcular();
+  }));
+}
+
 /* ----- métodos ----- */
 function escalaHTML(valor, cortes, rotulos, cores, extra) {
   const segs = cortes.slice(1).map((c, i) => '<div class="seg" style="width:' + (c - cortes[i]) + '%;background:' + cores[i][1] + ';border-top-color:' + cores[i][0] + '"></div>').join('');
@@ -1570,7 +1941,7 @@ function renderMetodos(R) {
   const lim = '<span class="lim" style="left:' + (100 * R.r).toFixed(1) + '%" title="C/L"></span>';
   const c2 = '<div class="metodo"><h3>Probabilidade e custo-perda</h3><p class="res">' + esc(NIVEIS[R.nCL].nome) + '</p>' +
     escalaHTML(100 * R.P, [0, 50 * R.r, 80 * R.r, 100 * R.r, 100], ['', '', '', 'Suspender'], [['#C9CDCF', '#F1F2F2'], ['#C9CDCF', '#F1F2F2'], ['#C9CDCF', '#F1F2F2'], ['#C8191E', '#FBE3E3']], lim) +
-    '<p>P = ' + pct(R.P) + ' combina os modelos (' + pct(R.pm.p) + ') com o alerta oficial (' + pct(R.A.pOf) + '). Com C/L = ' + fmt(R.r, 2) + ', o custo esperado de manter é ' + fmt(R.P, 2) + ' L e o de suspender é ' + fmt(R.r, 2) + ' L: ' + (R.P >= R.r ? 'suspender sai mais barato.' : 'manter sai mais barato.') + '</p></div>';
+    '<p>P = ' + pct(R.P) + ' combina ' + (R.al.usar ? 'a maior entre a chance de chuva forte nos modelos (' + pct(R.pm.p) + ') e a de alagamento (' + pct(R.al.p) + ')' : 'os modelos (' + pct(R.pm.p) + ')') + ' com o alerta oficial (' + pct(R.A.pOf) + '). Com C/L = ' + fmt(R.r, 2) + ', o custo esperado de manter é ' + fmt(R.P, 2) + ' L e o de suspender é ' + fmt(R.r, 2) + ' L: ' + (R.P >= R.r ? 'suspender sai mais barato.' : 'manter sai mais barato.') + '</p></div>';
   const regras = R.fz.disparos.slice(0, 4).map(d => '<li><span>' + esc(d.txt) + ' <small>(' + OUT_NOME[d.out] + ')</small></span><span class="barra" title="Força ' + fmt(d.w, 2) + '"><i style="width:' + (100 * d.w).toFixed(0) + '%"></i></span></li>').join('');
   const c3 = '<div class="metodo"><h3>Inteligência artificial (fuzzy)</h3><p class="res">' + esc(NIVEIS[R.fz.nivel].nome) + '</p>' +
     escalaHTML(R.fz.saida, [0, 30, 47, 64, 100], ['Manter', 'Atenção', 'Flexib.', 'Suspender'], CORES_N) +
@@ -1595,7 +1966,7 @@ function renderLog() {
   const l = lerLog(), box = $('#log');
   if (!l.length) { box.innerHTML = '<p class="nota">Nenhuma decisão registrada neste navegador.</p>'; return; }
   box.innerHTML = '<table class="log"><thead><tr><th>Registrado</th><th>Turno</th><th>IRC</th><th>P</th><th>Recomendação</th><th>Decisão</th></tr></thead><tbody>' +
-    l.slice(0, 8).map(e => '<tr><td class="num">' + esc(e.em.slice(8, 10) + '/' + e.em.slice(5, 7) + ' ' + e.em.slice(11, 16)) + '</td><td>' + esc(e.turno + ' ' + e.data.slice(8, 10) + '/' + e.data.slice(5, 7)) + '</td><td class="num">' + e.irc + '</td><td class="num">' + pct(e.p) + '</td><td>' + esc(NIVEIS[e.recomendacao].curto) + '</td><td>' + esc(NIVEIS[e.decisao].curto) + (e.obs ? '<br><small>' + esc(e.obs) + '</small>' : '') + '</td></tr>').join('') +
+    l.slice(0, 8).map(e => '<tr><td class="num">' + esc(e.em.slice(8, 10) + '/' + e.em.slice(5, 7) + ' ' + e.em.slice(11, 16)) + '</td><td>' + esc(e.turno + ' ' + e.data.slice(8, 10) + '/' + e.data.slice(5, 7)) + '</td><td class="num">' + e.irc + '</td><td class="num">' + pct(e.p) + '</td><td>' + esc(NIVEIS[e.recomendacao].curto) + '</td><td>' + esc(NIVEIS[e.decisao].curto) + (e.alag ? '<br><small>houve alagamento</small>' : '') + (e.obs ? '<br><small>' + esc(e.obs) + '</small>' : '') + '</td></tr>').join('') +
     '</tbody></table>' + (l.length > 8 ? '<p class="nota">Mostrando 8 de ' + l.length + ' registros. Exporte o CSV para ver todos.</p>' : '');
 }
 function registrar() {
@@ -1606,13 +1977,14 @@ function registrar() {
     n_indice: R.nIRC, n_custo: R.nCL, n_fuzzy: R.fz.nivel, recomendacao: R.nivel, decisao: +$('#reg-decisao').value,
     obs: $('#reg-obs').value.trim(), chuva72: +R.por[0].x.ant.toFixed(1), accjanela: +R.por[0].x.acc.toFixed(1),
     intmax: +Math.max.apply(null, R.por.map(r => r.x.int)).toFixed(1), dc: R.A.dc, inmet: R.A.inmet, cemaden: R.A.cem,
+    rio: R.A.rio, costeiro: R.A.cos, p_alag: +R.al.p.toFixed(3), alag: $('#reg-alag').checked ? 1 : 0,
     modo: S.sim.on ? 'simulacao' : DEMO ? 'demo' : 'real'
   });
-  gravarLog(l); $('#reg-obs').value = ''; renderLog();
+  gravarLog(l); $('#reg-obs').value = ''; $('#reg-alag').checked = false; renderLog();
 }
 function exportarCSV() {
   const l = lerLog(); if (!l.length) return;
-  const cols = ['em', 'data', 'turno', 'irc', 'p', 'n_indice', 'n_custo', 'n_fuzzy', 'recomendacao', 'decisao', 'obs', 'chuva72', 'accjanela', 'intmax', 'dc', 'inmet', 'cemaden', 'modo'];
+  const cols = ['em', 'data', 'turno', 'irc', 'p', 'n_indice', 'n_custo', 'n_fuzzy', 'recomendacao', 'decisao', 'obs', 'chuva72', 'accjanela', 'intmax', 'dc', 'inmet', 'cemaden', 'rio', 'costeiro', 'p_alag', 'alag', 'modo'];
   const cel = v => typeof v === 'number' ? String(v).replace('.', ',') : '"' + String(v === undefined ? '' : v).replace(/"/g, '""') + '"';
   baixar('risco-sj-decisoes.csv', '﻿' + cols.join(';') + '\n' + l.map(e => cols.map(k => cel(e[k])).join(';')).join('\n'), 'text/csv;charset=utf-8');
 }
@@ -1626,13 +1998,16 @@ function montarPrompt(R) {
     modo_dos_dados: S.sim.on ? 'simulação' : DEMO ? 'demonstração com dados sintéticos' : 'dados reais',
     indice_IRC_0a100: Math.round(R.irc), probabilidade_evento: +R.P.toFixed(2), razao_custo_perda: R.r,
     nivel_indice: NIVEIS[R.nIRC].nome, nivel_custo_perda: NIVEIS[R.nCL].nome, nivel_fuzzy: NIVEIS[R.fz.nivel].nome, recomendacao_do_painel: NIVEIS[R.nivel].nome,
-    alertas_oficiais: { defesa_civil_sc: DC_NOMES[R.A.dc], inmet: INMET_NOMES[R.A.inmet], cemaden: CEM_NOMES[R.A.cem], observacao_defesa_civil: S.cfg.manual.dcNota || '' },
+    alertas_oficiais: { defesa_civil_sc: DC_NOMES[R.A.dc], inmet: INMET_NOMES[R.A.inmet], cemaden: CEM_NOMES[R.A.cem], rios: RIO_NOMES[R.A.rio], costeiros_ressaca: COS_NOMES[R.A.cos], observacao_defesa_civil: S.cfg.manual.dcNota || '' },
+    alagamento_sao_jose: { probabilidade: +R.al.p.toFixed(3), modelo: S.modelo.calibrado ? 'calibrado com ' + S.modelo.n_eventos + ' dias de alagamento' : 'referência, ainda não calibrado', entra_na_decisao: R.al.usar,
+      chuva_max_1h_mm: +nz(R.al.f.r1).toFixed(1), chuva_max_3h_mm: +nz(R.al.f.r3).toFixed(1), chuva_72h_mm: +nz(R.al.f.a72).toFixed(1), mare_max_m: R.al.f.marPrev === null ? 'sem dado' : +R.al.f.marPrev.toFixed(2), acrescimo_ressaca_m: R.al.f.acrescimo },
+    rios: S.rios.estacoes.map(r => ({ estacao: r.nome, nivel_cm: r.nivel_cm, variacao_24h_cm: r.variacao_24h_cm, situacao: estadoRio(r) === null ? 'sem cotas configuradas' : RIO_NOMES[estadoRio(r)] })),
     municipios: R.por.map(r => ({ municipio: r.o.nome, parcela_estudantes: +R.partes[r.i].toFixed(2), chuva_max_mm_h: +r.x.int.toFixed(1), acumulado_na_janela_mm: +r.x.acc.toFixed(1), chuva_72h_anteriores_mm: +r.x.ant.toFixed(1), rajada_max_kmh: Math.round(r.x.gust), chuva_passada_medida_em_pluviometros: !!r.x.medida })),
-    alertas_vigentes: S.dc.alertas.concat(S.inmet.avisos).filter(a => S.cfg.origens.some(o => atinge(a, o)) && sobrepoe(a, R.j)).map(a => ({ fonte: a.fonte || 'INMET', titulo: a.titulo || a.desc || a.evento, nivel: a.fonte === 'INMET' || a.sev ? INMET_NOMES[a.sev] || a.nivel : DC_NOMES[a.nivel], ate: a.fim })),
+    alertas_vigentes: S.dc.alertas.concat(S.inmet.avisos).filter(a => S.cfg.origens.some(o => atinge(a, o)) && sobrepoe(a, R.j)).map(a => ({ fonte: a.fonte || 'INMET', titulo: a.titulo || a.desc || a.evento, nivel: a.fonte === 'INMET' || a.sev ? INMET_NOMES[a.sev] || a.nivel : DC_NOMES[a.nivel], classe: classeAlerta(a), ate: a.fim })),
     ensemble: R.pm.fonte === 'ensemble' ? { membros: R.pm.n, acima_do_limiar: R.pm.k, limiar: T.acumuladoMM + ' mm na janela do turno ou ' + T.tresHorasMM + ' mm em 3 h' } : R.pm.fonte,
     areas_de_risco_com_ativacao_elevada: R.areas.filter(x => x.at >= 0.45).map(x => x.a.nome)
   };
-  const sistema = 'Você apoia a Direção-Geral do IFSC Câmpus São José (São José, SC) na decisão sobre suspensão de aulas presenciais por chuva. Escreva em português do Brasil, em tom técnico e direto, sem travessões. Use somente os dados fornecidos e não invente números. Considere o deslocamento de estudantes vindos de vários municípios da Grande Florianópolis e priorize a segurança. Estruture a resposta em: 1) Recomendação, escolhendo uma entre Manter aulas; Manter, em atenção; Flexibilizar; Suspender o turno; Suspender atividades presenciais. 2) Justificativa em até cinco itens. 3) Riscos de errar para cada lado. 4) O que monitorar nas próximas horas. Lembre que a decisão final é da Direção.';
+  const sistema = 'Você apoia a Direção-Geral do IFSC Câmpus São José (São José, SC) na decisão sobre suspensão de aulas presenciais por chuva. Escreva em português do Brasil, em tom técnico e direto, sem travessões. Use somente os dados fornecidos e não invente números. Considere o deslocamento de estudantes vindos de vários municípios da Grande Florianópolis e priorize a segurança. Alertas da classe costeiro (ressaca) e outro (temperatura, umidade) não contam como alerta de chuva. Estruture a resposta em: 1) Recomendação, escolhendo uma entre Manter aulas; Manter, em atenção; Flexibilizar; Suspender o turno; Suspender atividades presenciais. 2) Justificativa em até cinco itens. 3) Riscos de errar para cada lado. 4) O que monitorar nas próximas horas. Lembre que a decisão final é da Direção.';
   return { sistema, usuario: 'Dados do turno em análise:\n' + JSON.stringify(resumo, null, 2) };
 }
 async function gerarParecer() {
@@ -1687,7 +2062,7 @@ function ligarCampos() {
     if (nv === null || (typeof nv === 'number' && isNaN(nv))) { el.value = fmtCampo(el, antigo); el.setAttribute('aria-invalid', 'true'); setTimeout(() => el.removeAttribute('aria-invalid'), 2000); return; }
     setPath(S.cfg, p, nv); salvarCfg();
     if (p === 'cartoKey') trocarBase();
-    if (p === 'ensemble.modelos') carregar(); else recalcular();
+    if (p === 'ensemble.modelos' || p === 'alagamento.mareLat' || p === 'alagamento.mareLon') carregar(); else recalcular();
   }));
 }
 function montarOrigens() {
@@ -1718,7 +2093,8 @@ function montarTurnos() {
 function montarSimulacao() {
   const defs = [
     ['ant', 'Chuva nas 72 h anteriores', 0, 250, 5, 'mm'], ['acc', 'Acumulado na janela', 0, 200, 5, 'mm'], ['int', 'Intensidade máxima', 0, 100, 1, 'mm/h'],
-    ['gust', 'Rajada máxima', 0, 130, 5, 'km/h'], ['pens', 'Probabilidade nos modelos', 0, 100, 1, '%'], ['dc', 'Alerta da Defesa Civil', 0, 5, 1, ''], ['inmet', 'Aviso do INMET', 0, 3, 1, '']
+    ['gust', 'Rajada máxima', 0, 130, 5, 'km/h'], ['pens', 'Probabilidade nos modelos', 0, 100, 1, '%'], ['dc', 'Alerta da Defesa Civil', 0, 5, 1, ''], ['inmet', 'Aviso do INMET', 0, 3, 1, ''],
+    ['mar', 'Maré máxima', -0.5, 1.5, 0.05, 'm']
   ];
   const rot = (k, v) => k === 'dc' ? DC_NOMES[v] : k === 'inmet' ? INMET_NOMES[v] : v;
   $('#sim-grade').innerHTML = defs.map(d => '<label class="campo">' + d[1] + ': <output id="so-' + d[0] + '">' + rot(d[0], S.sim[d[0]]) + '</output> ' + d[5] + '<input type="range" min="' + d[2] + '" max="' + d[3] + '" step="' + d[4] + '" value="' + S.sim[d[0]] + '" data-sim="' + d[0] + '"></label>').join('');
@@ -1741,11 +2117,11 @@ function ligarBotoes() {
   $('#btn-exp-cfg').addEventListener('click', () => baixar('risco-sj-configuracao.json', JSON.stringify({ v: 1, cfg: S.cfg }, null, 2), 'application/json'));
   $('#arq-cfg').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
-    try { const j = JSON.parse(await f.text()); if (!j || j.v !== 1 || !j.cfg) throw new Error('formato'); S.cfg = deepMerge(clone(DEFAULTS), j.cfg); salvarCfg(); preencherCampos(); montarOrigens(); montarTurnos(); trocarBase(); carregar(); }
+    try { const j = JSON.parse(await f.text()); if (!j || j.v !== 1 || !j.cfg) throw new Error('formato'); S.cfg = deepMerge(clone(DEFAULTS), j.cfg); salvarCfg(); preencherCampos(); montarOrigens(); montarTurnos(); S.cotasCodigos = ''; montarCotas(); trocarBase(); carregar(); }
     catch (err) { alert('Arquivo de configuração inválido.'); }
     e.target.value = '';
   });
-  $('#btn-reset-cfg').addEventListener('click', () => { if (!confirm('Restaurar todos os parâmetros para os valores padrão?')) return; S.cfg = clone(DEFAULTS); salvarCfg(); preencherCampos(); montarOrigens(); montarTurnos(); trocarBase(); S.areas = prepararAreas(S.areas); carregar(); });
+  $('#btn-reset-cfg').addEventListener('click', () => { if (!confirm('Restaurar todos os parâmetros para os valores padrão?')) return; S.cfg = clone(DEFAULTS); salvarCfg(); preencherCampos(); montarOrigens(); montarTurnos(); S.cotasCodigos = ''; montarCotas(); trocarBase(); S.areas = prepararAreas(S.areas); carregar(); });
   $('#arq-areas').addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
     try {
@@ -1771,7 +2147,288 @@ function ligarBotoes() {
   });
   $('#btn-areas-base').addEventListener('click', () => { try { localStorage.removeItem(CHAVE_AREAS); } catch (e) {} carregarAreas(); recalcular(); });
   let tr = null;
-  window.addEventListener('resize', () => { clearTimeout(tr); tr = setTimeout(() => { const R = S.R[S.sel]; if (R) { renderGraficoChuva(); renderEnsemble(R); } }, 200); });
+  window.addEventListener('resize', () => { clearTimeout(tr); tr = setTimeout(() => { const R = S.R[S.sel]; if (R) { renderGraficoChuva(); renderEnsemble(R); renderGraficoMare(R); } }, 200); });
+}
+
+/* ================= calibração do modelo de alagamento ================= */
+const CAL = { regs: null, arquivo: '', pluv: null, modelo: null, dias: null, pcv: null };
+const brData = d => d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4);
+function chaveCol(r, nomes) { return Object.keys(r).find(c => nomes.indexOf(norm(c).replace(/[_\s]/g, '')) >= 0); }
+function datasOcorrencias(regs, mun) {
+  const datas = new Set(); let lidas = 0, fora = 0, tipoFora = 0, semData = 0;
+  const alvo = norm(mun);
+  regs.forEach(r => {
+    const kd = chaveCol(r, ['data', 'dataocorrencia', 'datadaocorrencia', 'dataevento', 'datadoevento', 'datainicio', 'inicio', 'dt', 'date']);
+    if (!kd) { semData++; return; }
+    lidas++;
+    const km = chaveCol(r, ['municipio', 'cidade', 'nomemunicipio']), kt = chaveCol(r, ['tipo', 'cobrade', 'evento', 'natureza', 'ocorrencia', 'tipologia', 'classificacao']);
+    if (km && alvo && norm(String(r[km]).replace(/\s*(-|\/|\()\s*sc\)?\s*$/i, '')) !== alvo) { fora++; return; }
+    if (kt && r[kt] && !/alag|inund|enxurr|enchent|transbord|1\.2\./.test(norm(r[kt]))) { tipoFora++; return; }
+    const d = paraLocal(r[kd]);
+    if (d) datas.add(d.slice(0, 10)); else semData++;
+  });
+  return { datas, lidas, fora, tipoFora, semData };
+}
+function gradeHoraria(ini, fim) {
+  const t0 = paraMin(ini + 'T01:00'), n = (paraMin(somaDias(fim, 1) + 'T00:00') - t0) / 60 + 1;
+  const v = new Array(n); for (let i = 0; i < n; i++) v[i] = NaN;
+  return { t0, n, v };
+}
+function preencherGrade(G, h, campo) {
+  if (!h || !h.time || !h[campo]) return 0;
+  let k = 0;
+  h.time.forEach((t, i) => { const q = (paraMin(t) - G.t0) / 60, x = h[campo][i]; if (q >= 0 && q < G.n && x !== null && x !== undefined && !isNaN(x)) { G.v[q] = +x; k++; } });
+  return k;
+}
+async function arquivoOpenMeteo(base, campo, lat, lon, ini, fim, G, status, rotulo) {
+  let a = ini, total = 0;
+  while (a <= fim) {
+    const dez = a.slice(0, 4) + '-12-31', b = dez < fim ? dez : fim;
+    status('Baixando ' + rotulo + ' de ' + a.slice(0, 4) + '.');
+    const r = await buscarJSON(base + '?latitude=' + (+lat).toFixed(4) + '&longitude=' + (+lon).toFixed(4) + '&start_date=' + a + '&end_date=' + b + '&hourly=' + campo + '&timezone=' + encodeURIComponent(TZ), 90000);
+    total += preencherGrade(G, r.hourly, campo);
+    a = somaDias(b, 1);
+  }
+  if (!total) throw new Error('sem dados de ' + rotulo + ' no período');
+  return total;
+}
+function chuvaDeCSVs(listas, mun, utc, G) {
+  const o = S.cfg.origens.find(x => norm(x.nome) === norm(mun)), ibge = o && o.ibge;
+  const est = {}; let nreg = 0;
+  listas.forEach(regs => regs.forEach(r => {
+    const kd = chaveCol(r, ['datahora', 'data']), kv = chaveCol(r, ['valormedida', 'valor', 'chuva']);
+    if (!kd || !kv) return;
+    const kc = chaveCol(r, ['codestacao', 'idestacao', 'cod']), km = chaveCol(r, ['municipio', 'cidade']);
+    const cod = kc ? String(r[kc]) : '', mm = km ? String(r[km]) : '';
+    if (!((ibge && cod.replace(/\D/g, '').slice(0, 7) === ibge) || (mm && norm(mm) === norm(mun)))) return;
+    const sx = String(r[kd]).replace(' ', 'T').slice(0, 16);
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(sx)) return;
+    const t = paraMin(sx) - (utc ? 180 : 0), x = numBR(r[kv]);
+    if (isNaN(x) || x < 0) return;
+    const q = (Math.ceil(t / 60) * 60 - G.t0) / 60;
+    if (q < 0 || q >= G.n) return;
+    const id = cod || mm, e = est[id] = est[id] || new Map();
+    e.set(q, (e.get(q) || 0) + x); nreg++;
+  }));
+  const ids = Object.keys(est);
+  for (let q = 0; q < G.n; q++) {
+    const vals = []; ids.forEach(id => { const x = est[id].get(q); if (x !== undefined) vals.push(x); });
+    if (vals.length) { vals.sort((a, b) => a - b); const m = vals.length >> 1; G.v[q] = vals.length % 2 ? vals[m] : (vals[m - 1] + vals[m]) / 2; }
+  }
+  return { estacoes: ids.length, registros: nreg };
+}
+// Variáveis de um dia: chuva máxima em 1 h e em 3 h e maré máxima entre 0 h e 24 h; chuva das 72 h anteriores.
+function featuresDia(d, G, Mr) {
+  const a = paraMin(d + 'T00:00'), i0 = (a - G.t0) / 60 + 1, i1 = i0 + 23;
+  if (i0 - 72 < 0 || i1 >= G.n) return null;
+  let r1 = 0, r3 = 0, nv = 0;
+  for (let i = i0; i <= i1; i++) {
+    const x = G.v[i]; if (isNaN(x)) continue;
+    nv++; if (x > r1) r1 = x;
+    const s3 = x + G.v[i - 1] + G.v[i - 2]; if (!isNaN(s3) && s3 > r3) r3 = s3;
+  }
+  if (nv < 20) return null;
+  let a72 = 0, na = 0; for (let i = i0 - 72; i < i0; i++) { const x = G.v[i]; if (!isNaN(x)) { a72 += x; na++; } }
+  if (na < 60) return null;
+  let mar = NaN;
+  if (Mr) { let mx = -Infinity, nm = 0; for (let i = i0; i <= i1; i++) { const x = Mr.v[i]; if (!isNaN(x)) { nm++; if (x > mx) mx = x; } } if (nm >= 16) mar = mx; }
+  return { d, r1, r3: Math.max(r3, r1), a72, mar };
+}
+function resolverSistema(A, b) {
+  const n = b.length, M = A.map((l, i) => l.slice().concat([b[i]]));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let i = c + 1; i < n; i++) if (Math.abs(M[i][c]) > Math.abs(M[p][c])) p = i;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    const t = M[c]; M[c] = M[p]; M[p] = t;
+    for (let i = c + 1; i < n; i++) { const f = M[i][c] / M[c][c]; for (let k = c; k <= n; k++) M[i][k] -= f * M[c][k]; }
+  }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) { let sm = M[i][n]; for (let k = i + 1; k < n; k++) sm -= M[i][k] * x[k]; x[i] = sm / M[i][i]; }
+  return x;
+}
+// Regressão logística por Newton-Raphson (IRLS) com penalização L2 nos coeficientes, sem penalizar o intercepto.
+function ajustarLogistica(X, y, lambda) {
+  const n = X.length, p = X[0].length + 1, ybar = y.reduce((a, b) => a + b, 0) / n;
+  const beta = new Array(p).fill(0); beta[0] = Math.log((ybar + 1e-6) / (1 - ybar + 1e-6));
+  for (let it = 0; it < 60; it++) {
+    const g = new Array(p).fill(0), H = Array.from({ length: p }, () => new Array(p).fill(0));
+    for (let r = 0; r < n; r++) {
+      const xr = [1].concat(X[r]); let z = 0; for (let j = 0; j < p; j++) z += beta[j] * xr[j];
+      const mu = 1 / (1 + Math.exp(-z)), w = Math.max(mu * (1 - mu), 1e-10), e = y[r] - mu;
+      for (let j = 0; j < p; j++) { g[j] += e * xr[j]; for (let k = j; k < p; k++) H[j][k] += w * xr[j] * xr[k]; }
+    }
+    for (let j = 1; j < p; j++) { g[j] -= lambda * beta[j]; H[j][j] += lambda; }
+    for (let j = 0; j < p; j++) for (let k = 0; k < j; k++) H[j][k] = H[k][j];
+    const dl = resolverSistema(H, g); if (!dl) break;
+    let mx = 0; for (let j = 0; j < p; j++) { beta[j] += dl[j]; mx = Math.max(mx, Math.abs(dl[j])); }
+    if (mx < 1e-8) break;
+  }
+  return beta;
+}
+function calibrarDias(dias, vars, lambda) {
+  const med = {}, dp = {};
+  vars.forEach(v => { const xs = dias.map(d => d[v]), m = xs.reduce((a, b) => a + b, 0) / xs.length; med[v] = m; dp[v] = Math.sqrt(xs.reduce((a, b) => a + (b - m) * (b - m), 0) / Math.max(1, xs.length - 1)) || 1; });
+  const b = ajustarLogistica(dias.map(d => vars.map(v => (d[v] - med[v]) / dp[v])), dias.map(d => d.y), lambda);
+  const coef = { b0: b[0] };
+  vars.forEach((v, j) => { coef[v] = b[j + 1] / dp[v]; coef.b0 -= b[j + 1] * med[v] / dp[v]; });
+  return { coef, med };
+}
+const prever = (coef, vars, d) => { let z = coef.b0; vars.forEach(v => { z += coef[v] * d[v]; }); return 1 / (1 + Math.exp(-z)); };
+function auc(p, y) {
+  const idx = p.map((v, i) => i).sort((a, b) => p[a] - p[b]);
+  let somaPos = 0, nPos = 0, i = 0;
+  while (i < idx.length) {
+    let j = i; while (j + 1 < idx.length && p[idx[j + 1]] === p[idx[i]]) j++;
+    const rk = (i + j) / 2 + 1; for (let k = i; k <= j; k++) if (y[idx[k]]) { somaPos += rk; nPos++; }
+    i = j + 1;
+  }
+  const nNeg = y.length - nPos;
+  return nPos && nNeg ? (somaPos - nPos * (nPos + 1) / 2) / (nPos * nNeg) : NaN;
+}
+const brier = (p, y) => p.reduce((a, v, i) => a + (v - y[i]) * (v - y[i]), 0) / p.length;
+function validacaoCruzada(dias, vars, lambda, k) {
+  const rnd = prng(42), pos = [], neg = [], dobra = new Array(dias.length), pr = new Array(dias.length);
+  dias.forEach((d, i) => (d.y ? pos : neg).push(i));
+  const embaralhar = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; };
+  embaralhar(pos).forEach((i, q) => { dobra[i] = q % k; }); embaralhar(neg).forEach((i, q) => { dobra[i] = q % k; });
+  for (let f = 0; f < k; f++) {
+    const treino = dias.filter((d, i) => dobra[i] !== f);
+    if (!treino.some(d => d.y)) continue;
+    const m = calibrarDias(treino, vars, lambda);
+    dias.forEach((d, i) => { if (dobra[i] === f) pr[i] = prever(m.coef, vars, d); });
+  }
+  return pr;
+}
+const arred = (o, c) => { const r = {}; for (const k in o) r[k] = +(+o[k]).toFixed(c || 6); return r; };
+async function rodarCalibracao() {
+  const st = t => { $('#cal-status').textContent = t; }, btn = $('#btn-calibrar');
+  btn.disabled = true; $('#cal-res').innerHTML = ''; $('#cal-acoes').hidden = true;
+  try {
+    const mun = $('#cal-mun').value.trim() || 'São José';
+    const ev = new Set(CAL.regs ? datasOcorrencias(CAL.regs, mun).datas : []);
+    if ($('#cal-log').checked) lerLog().forEach(e => { if (e.alag && e.data && e.modo === 'real') ev.add(e.data); });
+    let ini = $('#cal-ini').value, fim = $('#cal-fim').value;
+    if (!ini || !fim) throw new Error('informe o início e o fim do período');
+    if (fim < ini) throw new Error('o fim do período vem antes do início');
+    const ontem = somaDias(hojeStr(), -1); if (fim > ontem) fim = ontem;
+    const nPer = [...ev].filter(d => d >= ini && d <= fim).length;
+    if (nPer < 5) throw new Error('são necessários pelo menos 5 dias com alagamento dentro do período (há ' + nPer + ')');
+    const comeco = somaDias(ini, -4), G = gradeHoraria(comeco, fim);
+    const o = S.cfg.origens.find(x => norm(x.nome) === norm(mun)) || S.cfg.origens[0];
+    let fonteChuva;
+    if ($('#cal-chuva').value === 'cemaden') {
+      if (!CAL.pluv || !CAL.pluv.length) throw new Error('escolha os CSVs dos pluviômetros do CEMADEN');
+      const r = chuvaDeCSVs(CAL.pluv, mun, $('#cal-pluv-fuso').value === 'utc', G);
+      if (!r.estacoes) throw new Error('os CSVs não têm estações de ' + mun + ' no período');
+      fonteChuva = 'CEMADEN, mediana de ' + r.estacoes + (r.estacoes > 1 ? ' pluviômetros' : ' pluviômetro') + ' de ' + mun;
+    } else {
+      await arquivoOpenMeteo('https://archive-api.open-meteo.com/v1/archive', 'precipitation', o.lat, o.lon, comeco, fim, G, st, 'chuva (reanálise)');
+      fonteChuva = 'Open-Meteo, reanálise horária no ponto de ' + o.nome;
+    }
+    let Mr = null, fonteMare = 'não usada';
+    if ($('#cal-mare').checked) {
+      const pt = S.mare && S.mare.ponto ? S.mare.ponto : MARE_PONTOS[MARE_PONTOS.length - 1];
+      Mr = gradeHoraria(comeco, fim);
+      try { await arquivoOpenMeteo('https://marine-api.open-meteo.com/v1/marine', 'sea_level_height_msl', pt[0], pt[1], comeco, fim, Mr, st, 'maré'); fonteMare = 'Open-Meteo Marine, ponto ' + fmt(pt[0], 2) + ', ' + fmt(pt[1], 2); }
+      catch (e) { Mr = null; fonteMare = 'indisponível (' + e.message + ')'; }
+    }
+    st('Montando a tabela diária.');
+    let dias = [];
+    for (let d = ini; d <= fim; d = somaDias(d, 1)) { const f = featuresDia(d, G, Mr); if (f) { f.y = ev.has(d) ? 1 : 0; dias.push(f); } }
+    const vars = ['r1', 'r3', 'a72'];
+    if (Mr) {
+      const cob = dias.filter(d => !isNaN(d.mar)).length / Math.max(1, dias.length);
+      if (cob >= 0.7) { vars.push('mar'); dias = dias.filter(d => !isNaN(d.mar)); }
+      else fonteMare = 'cobertura insuficiente (' + fmt(100 * cob) + '% dos dias), maré fora do modelo';
+    }
+    const nEv = dias.filter(d => d.y).length;
+    if (nEv < 5) throw new Error('depois de descartar os dias sem dados, restaram ' + nEv + ' dias com alagamento; são necessários pelo menos 5');
+    st('Ajustando a regressão logística.');
+    const lambda = 1, m = calibrarDias(dias, vars, lambda), y = dias.map(d => d.y), p = dias.map(d => prever(m.coef, vars, d));
+    const pcv = validacaoCruzada(dias, vars, lambda, 5), okcv = pcv.every(v => v !== undefined), ybar = nEv / dias.length;
+    CAL.modelo = { versao: 1, tipo: 'logistica', calibrado: true, nome: 'Calibrado com ocorrências de ' + mun, municipio: mun, escala: 'dia',
+      variaveis: vars, coef: arred(m.coef), medias: arred(m.med, 3), n_dias: dias.length, n_eventos: nEv, periodo: [ini, fim],
+      fonte_chuva: fonteChuva, fonte_mare: vars.indexOf('mar') >= 0 ? fonteMare : '', lambda,
+      auc: +auc(p, y).toFixed(4), auc_cv: okcv ? +auc(pcv, y).toFixed(4) : null,
+      brier: +brier(p, y).toFixed(5), brier_cv: okcv ? +brier(pcv, y).toFixed(5) : null, brier_clima: +(ybar * (1 - ybar)).toFixed(5), gerado_em: agoraLocal() };
+    CAL.dias = dias; CAL.pcv = okcv ? pcv : p;
+    renderCalibracao(CAL.modelo, dias, CAL.pcv, fonteMare);
+    $('#cal-acoes').hidden = false; st('Calibração concluída. Confira as métricas antes de usar o modelo.');
+  } catch (e) { st('Não foi possível calibrar: ' + e.message + '.'); }
+  finally { btn.disabled = false; }
+}
+function renderCalibracao(M, dias, pcv, fonteMare) {
+  const y = dias.map(d => d.y);
+  const nomes = { r1: 'Chuva máxima em 1 h', r3: 'Chuva máxima em 3 h', a72: 'Chuva nas 72 h anteriores', mar: 'Maré máxima' };
+  const passo = { r1: 10, r3: 10, a72: 50, mar: 0.25 };
+  const cortes = [0, 0.02, 0.05, 0.1, 0.2, 0.4, 1.0001];
+  const tab = cortes.slice(1).map((b, i) => { const sel = pcv.map((q, k) => [q, y[k]]).filter(q => q[0] >= cortes[i] && q[0] < b); return { a: cortes[i], b, n: sel.length, prev: sel.length ? sel.reduce((s, q) => s + q[0], 0) / sel.length : NaN, obs: sel.length ? sel.reduce((s, q) => s + q[1], 0) / sel.length : NaN }; });
+  const bs = M.brier_cv !== null ? M.brier_cv : M.brier, bss = 1 - bs / M.brier_clima;
+  let h = '<div class="calib-res"><div class="metr">' +
+    '<div>Dias usados<b>' + fmt(M.n_dias) + '</b></div><div>Dias com alagamento<b>' + fmt(M.n_eventos) + '</b></div>' +
+    '<div>AUC, validação cruzada<b>' + (M.auc_cv === null ? 's/d' : fmt(M.auc_cv, 2)) + '</b></div><div>AUC nos dados de ajuste<b>' + fmt(M.auc, 2) + '</b></div>' +
+    '<div>Brier, validação cruzada<b>' + fmt(bs, 4) + '</b></div><div>Ganho sobre a climatologia<b>' + fmt(100 * bss) + '%</b></div></div>';
+  h += '<table><thead><tr><th>Variável</th><th>Coeficiente</th><th>Leitura</th></tr></thead><tbody><tr><td>Intercepto</td><td class="num">' + fmt(M.coef.b0, 3) + '</td><td>chance de ' + pct(1 / (1 + Math.exp(-M.coef.b0))) + ' num dia sem chuva e com a maré no nível médio</td></tr>' +
+    M.variaveis.map(v => '<tr><td>' + nomes[v] + '</td><td class="num">' + fmt(M.coef[v], 4) + '</td><td>cada ' + (v === 'mar' ? fmt(passo[v], 2) + ' m' : passo[v] + ' mm') + ' a mais multiplicam a chance por ' + fmt(Math.exp(M.coef[v] * passo[v]), 2) + '</td></tr>').join('') + '</tbody></table>';
+  h += '<table><thead><tr><th>Probabilidade prevista (validação cruzada)</th><th>Dias</th><th>Média prevista</th><th>Frequência observada</th></tr></thead><tbody>' +
+    tab.map(t => '<tr><td>' + fmt(100 * t.a) + '% a ' + (t.b > 1 ? '100' : fmt(100 * t.b)) + '%</td><td class="num">' + t.n + '</td><td class="num">' + (t.n ? pct(t.prev) : '') + '</td><td class="num">' + (t.n ? pct(t.obs) : '') + '</td></tr>').join('') + '</tbody></table>';
+  const avisos = [];
+  if (M.n_eventos < 20) avisos.push('Há menos de 20 dias com alagamento: os coeficientes ficam instáveis. Amplie o período ou o registro de ocorrências antes de usar o modelo na decisão.');
+  if (M.auc_cv !== null && M.auc_cv < 0.7) avisos.push('A AUC na validação cruzada está abaixo de 0,70: o modelo separa mal os dias com e sem alagamento.');
+  if (bss < 0) avisos.push('O Brier ficou pior que o da climatologia: o modelo não melhora a simples frequência de alagamentos.');
+  if (/reanálise/.test(M.fonte_chuva)) avisos.push('A reanálise suaviza os picos de chuva, então os coeficientes da chuva em 1 h e em 3 h tendem a sair maiores do que com pluviômetros. Prefira os CSVs do CEMADEN quando houver.');
+  M.variaveis.forEach(v => { if (M.coef[v] < 0) avisos.push('O coeficiente de ' + nomes[v].toLowerCase() + ' saiu negativo, o que não tem sentido físico; costuma refletir correlação com as outras variáveis ou poucos eventos.'); });
+  h += '<p class="nota">Chuva: ' + esc(M.fonte_chuva) + '. Maré: ' + esc(fonteMare) + '. Período: ' + brData(M.periodo[0]) + ' a ' + brData(M.periodo[1]) + '. Regressão logística com penalização L2 (λ = ' + M.lambda + ') sobre as variáveis padronizadas; validação cruzada estratificada em 5 partes.</p>' +
+    (avisos.length ? '<p class="nota erro">' + avisos.map(esc).join(' ') + '</p>' : '') + '</div>';
+  $('#cal-res').innerHTML = h;
+}
+function renderModeloAtual() {
+  const M = S.modelo, el = $('#cal-modelo-atual'); if (!el) return;
+  el.textContent = 'Modelo em uso: ' + (M.calibrado ? M.nome + ' (' + fmt(M.n_dias) + ' dias, ' + fmt(M.n_eventos) + ' com alagamento' + (M.auc_cv ? ', AUC ' + fmt(M.auc_cv, 2) : '') + ')' : 'referência, ainda não calibrado') + '. Origem: ' + S.modeloFonte + '.';
+}
+function ligarCalibracao() {
+  $('#cal-ocorr').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const regs = lerCSV(await f.text()), r = datasOcorrencias(regs, $('#cal-mun').value.trim());
+      if (!r.datas.size) throw new Error('nenhuma data de ocorrência reconhecida' + (r.fora ? '; ' + r.fora + ' linhas são de outros municípios' : '') + (r.tipoFora ? '; ' + r.tipoFora + ' linhas são de outros tipos de ocorrência' : ''));
+      CAL.regs = regs; CAL.arquivo = f.name;
+      const ds = [...r.datas].sort(), ontem = somaDias(hojeStr(), -1), depois = somaDias(ds[ds.length - 1], 30);
+      $('#cal-ini').value = somaDias(ds[0], -30); $('#cal-fim').value = depois < ontem ? depois : ontem;
+      $('#cal-ocorr-info').textContent = f.name + ': ' + r.datas.size + ' dias com alagamento, de ' + brData(ds[0]) + ' a ' + brData(ds[ds.length - 1]) + '.' +
+        (r.fora ? ' ' + r.fora + ' linhas de outros municípios ignoradas.' : '') + (r.tipoFora ? ' ' + r.tipoFora + ' linhas de outros tipos ignoradas.' : '') + ' O período foi sugerido com 30 dias de margem; ajuste ao período real do registro.';
+    } catch (err) { CAL.regs = null; $('#cal-ocorr-info').textContent = 'Não foi possível usar o arquivo: ' + err.message + '.'; }
+    e.target.value = '';
+  });
+  $('#cal-pluv').addEventListener('change', async e => {
+    const fs = Array.from(e.target.files); if (!fs.length) return;
+    CAL.pluv = []; let n = 0;
+    for (const f of fs) { const regs = lerCSV(await f.text()); n += regs.length; CAL.pluv.push(regs); }
+    $('#cal-chuva').value = 'cemaden';
+    $('#cal-pluv-info').textContent = fs.length + (fs.length > 1 ? ' arquivos' : ' arquivo') + ' com ' + fmt(n) + ' registros. A chuva da calibração passa a vir dos pluviômetros.';
+    e.target.value = '';
+  });
+  $('#btn-calibrar').addEventListener('click', rodarCalibracao);
+  $('#btn-cal-usar').addEventListener('click', () => {
+    if (!CAL.modelo) return;
+    try { localStorage.setItem(CHAVE_MODELO, JSON.stringify(CAL.modelo)); } catch (e) {}
+    S.modelo = CAL.modelo; S.modeloFonte = 'este navegador'; renderModeloAtual(); recalcular();
+  });
+  $('#btn-cal-baixar').addEventListener('click', () => { if (CAL.modelo) baixar('modelo-alagamento.json', JSON.stringify(CAL.modelo, null, 2), 'application/json'); });
+  $('#btn-cal-dias').addEventListener('click', () => {
+    if (!CAL.dias) return;
+    const cel = v => typeof v === 'number' ? (isNaN(v) ? '' : String(+v.toFixed(4)).replace('.', ',')) : String(v);
+    const linhas = CAL.dias.map((d, i) => [d.d, d.r1, d.r3, d.a72, d.mar, d.y, CAL.pcv[i]].map(cel).join(';'));
+    baixar('calibracao-alagamento-dias.csv', String.fromCharCode(0xFEFF) + 'data;chuva_max_1h_mm;chuva_max_3h_mm;chuva_72h_mm;mare_max_m;alagamento;p_validacao\n' + linhas.join('\n'), 'text/csv;charset=utf-8');
+  });
+  $('#btn-cal-ref').addEventListener('click', async () => { try { localStorage.removeItem(CHAVE_MODELO); } catch (e) {} await carregarModelo(); renderModeloAtual(); recalcular(); });
+  $('#cal-carregar').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const m = JSON.parse(await f.text()); if (!validarModelo(m)) throw new Error('formato'); try { localStorage.setItem(CHAVE_MODELO, JSON.stringify(m)); } catch (e2) {} S.modelo = m; S.modeloFonte = 'este navegador'; renderModeloAtual(); recalcular(); }
+    catch (err) { alert('Arquivo de modelo inválido. Use o modelo-alagamento.json gerado pela calibração.'); }
+    e.target.value = '';
+  });
+  renderModeloAtual();
 }
 
 /* ================= demonstração ================= */
@@ -1794,7 +2451,21 @@ function aplicarDemo() {
     return { k: 'precipitation_member' + String(k).padStart(2, '0'), v: tm.map((m, q) => { const qq = q - desl; return Math.round((qq >= 0 && qq < N ? b0.p[qq] : 0) * fator * 10) / 10; }) };
   });
   S.ens = { tm, membros, modelos: 'demonstração' };
-  S.inmet = { estado: 'demo', avisos: [{ desc: 'Chuvas Intensas', sev: 2, ini: h + 'T10:00', fim: somaDias(h, 1) + 'T10:00', ibges: ['4216602', '4205407', '4211900'], munTxt: 'São José, Florianópolis, Palhoça' }] };
+  S.inmet = { estado: 'demo', avisos: [
+    { desc: 'Chuvas Intensas', sev: 2, ini: h + 'T10:00', fim: somaDias(h, 1) + 'T10:00', ibges: ['4216602', '4205407', '4211900'], munTxt: 'São José, Florianópolis, Palhoça' },
+    { desc: 'Ventos Costeiros', sev: 1, ini: h + 'T12:00', fim: somaDias(h, 1) + 'T12:00', ibges: ['4216602', '4205407', '4211900'], munTxt: 'São José, Florianópolis, Palhoça' },
+    { desc: 'Declínio de Temperatura', sev: 1, ini: somaDias(h, 1) + 'T00:00', fim: somaDias(h, 1) + 'T23:59', ibges: ['4216602', '4205407'], munTxt: 'São José, Florianópolis' }
+  ] };
+  S.inmet.avisos.forEach(a => { a.classe = classeAlerta(a); });
+  S.mare = { tm, ponto: MARE_PONTOS[0],
+    nivel: tm.map(m => { const hh = (m - t0) / 60; return Math.round((0.32 * Math.cos(2 * Math.PI * (hh - 5) / 12.42) + 0.12 * Math.cos(2 * Math.PI * (hh - 2) / 12) + 0.22 * g(m, pico, 1, 8)) * 100) / 100; }),
+    onda: tm.map(m => Math.round((1.1 + g(m, pico, 1.8, 10)) * 10) / 10) };
+  S.mareEstado = 'demo';
+  const serieRio = (n0, n1) => Array.from({ length: 48 }, (_, k) => [deMin(paraMin(agoraLocal()) - (47 - k) * 60).slice(0, 13) + ':00', Math.round(n0 + (n1 - n0) * Math.pow(k / 47, 2))]);
+  S.rios = { estado: 'demo', estacoes: [
+    { codigo: '84100000', nome: 'Rio Cubatão do Sul em Poço Fundo', municipio: 'Santo Amaro da Imperatriz', ibges: ['4215703', '4211900'], nivel_cm: 312, variacao_24h_cm: 148, quando: agoraLocal(), cotas: { atencao: 250, alerta: 300, emergencia: 380 }, estado: 2, serie: serieRio(150, 312) },
+    { codigo: '84150100', nome: 'Rio Cubatão do Sul na ETA Casan (montante)', municipio: 'Palhoça', ibges: ['4211900'], nivel_cm: 205, variacao_24h_cm: 61, quando: agoraLocal(), cotas: null, estado: null, serie: serieRio(140, 205) }
+  ] };
   S.dc = { estado: 'demo', alertas: [{ fonte: 'Defesa Civil (IDAP)', id: 'demo-1', remetente: 'Defesa Civil de Santa Catarina', evento: 'Chuvas Intensas', nivel: 3, nivel_origem: 'demonstração',
     titulo: 'Alerta alto: chuva intensa com risco de alagamentos e deslizamentos na Grande Florianópolis', ini: h + 'T15:00', fim: somaDias(h, 1) + 'T06:00',
     ibges: ['4216602', '4211900', '4205407'], geocodes: [], poligonos: [[[-27.53, -48.74], [-27.53, -48.50], [-27.70, -48.50], [-27.70, -48.74]]] }] };
@@ -1817,12 +2488,14 @@ function aplicarDemo() {
 async function carregar() {
   if (S.carregando) return;
   S.carregando = true; $('#btn-atualizar').disabled = true; renderFontes();
-  if (DEMO) aplicarDemo();
+  if (DEMO) { aplicarDemo(); await carregarModelo(); }
   else {
     if (S.fcEstado !== 'ok') S.fcEstado = 'carregando';
     const tarefas = [
       buscarPrevisao().then(fc => { S.fc = fc; S.fcEstado = 'ok'; recalcular(); }).catch(e => { S.fcEstado = 'erro'; S.fcErro = e.message; }),
-      buscarEnsemble().then(en => { S.ens = en; S.ensEstado = 'ok'; S.ensErro = ''; }).catch(e => { S.ens = null; S.ensEstado = 'erro'; S.ensErro = e.message; })
+      buscarEnsemble().then(en => { S.ens = en; S.ensEstado = 'ok'; S.ensErro = ''; }).catch(e => { S.ens = null; S.ensEstado = 'erro'; S.ensErro = e.message; }),
+      buscarMare().then(m => { S.mare = m; S.mareEstado = 'ok'; S.mareErro = ''; }).catch(e => { S.mare = null; S.mareEstado = 'erro'; S.mareErro = e.message; }),
+      carregarModelo()
     ];
     let col = null;
     try { col = await buscarColetor(); S.coletor = { estado: 'ok', gerado: col.gerado, idade: col.idade, fontes: col.fontes }; }
@@ -1833,14 +2506,19 @@ async function carregar() {
       if (f.cemaden_pluviometros && f.cemaden_pluviometros.ok) S.pluv = { estado: 'ok', estacoes: col.pluv };
       else if (S.pluv.estado !== 'manual') S.pluv = { estado: 'erro', estacoes: [], erro: (f.cemaden_pluviometros && f.cemaden_pluviometros.msg) || 'sem dados no coletor' };
       if (f.inmet && f.inmet.ok) S.inmet = { estado: 'ok', avisos: col.inmet };
+      const fr = f.ana_rios;
+      S.rios = fr && fr.ok ? { estado: 'ok', estacoes: col.rios }
+        : { estado: fr && fr.ok === null ? 'semcred' : 'erro', estacoes: [], erro: fr ? (fr.msg || 'sem dados') : 'o coletor publicado ainda não traz os rios; atualize coletor/coletar.py' };
     } else {
       S.dc = { estado: 'erro', alertas: [], erro: 'coletor não encontrado; publique pelo GitHub Actions' };
       if (S.pluv.estado !== 'manual') S.pluv = { estado: 'erro', estacoes: [], erro: 'coletor não encontrado' };
+      S.rios = { estado: 'erro', estacoes: [], erro: 'coletor não encontrado' };
     }
     if (!(f.inmet && f.inmet.ok)) tarefas.push(buscarINMET().then(av => { S.inmet = { estado: 'ok', avisos: av }; }).catch(e => { S.inmet = { estado: 'erro', avisos: [], erro: e.message }; }));
     await Promise.allSettled(tarefas);
   }
   S.carregando = false; S.atualizado = agoraLocal(); $('#btn-atualizar').disabled = false;
+  montarCotas(); renderModeloAtual();
   recalcular();
 }
 
@@ -1848,7 +2526,7 @@ function iniciar() {
   $('#versao').textContent = VERSAO;
   S.cfg = carregarCfg();
   carregarAreas();
-  montarOrigens(); montarTurnos(); montarSimulacao(); ligarCampos(); ligarBotoes();
+  montarOrigens(); montarTurnos(); montarSimulacao(); montarCotas(); ligarCampos(); ligarBotoes(); ligarCalibracao();
   iniciarMapa();
   recalcular();
   carregar();
@@ -1857,7 +2535,7 @@ function iniciar() {
 }
 iniciar();
 
-window.RISCO = { S, avaliar, fuzzy, pw, montarJanelas };
+window.RISCO = { S, avaliar, fuzzy, pw, montarJanelas, pAlag, classeAlerta, ajustarLogistica, calibrarDias, auc, featuresDia, gradeHoraria };
 })();
 </script>
 </body>
