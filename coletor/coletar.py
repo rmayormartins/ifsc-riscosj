@@ -12,8 +12,15 @@ Fontes
                 Defesas Civis por SMS 40199, cell broadcast e outros canais)
   INMET         Avisos ativos em JSON; se falhar, RSS com um CAP por aviso
   CEMADEN       Pluviômetros da rede observacional (dados abertos)
+  Rios (ANA)    Nível dos rios nas estações telemétricas da ANA (Hidro-WebService,
+                com credenciais em ANA_IDENTIFICADOR e ANA_SENHA; sem elas, tenta o
+                serviço público antigo)
   SDC/SC site   Feed RSS da categoria Alerta do site da SDC/SC (desligado por
                 padrão; ligue com RISCO_SDC_SITE=1 depois de confirmar com a SDC/SC)
+
+Cada alerta recebe uma classe: chuva (entra no índice), costeiro (ressaca e
+ventos costeiros, que agravam alagamentos junto com chuva e maré alta) ou
+outro (temperatura, umidade e afins, só informativos).
 
 Uso
   python coletor/coletar.py --saida dados/alertas.json --historico dados/historico
@@ -31,12 +38,13 @@ import sys
 import time
 import unicodedata
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-VERSAO = '1.2'
+VERSAO = '1.3'
 TZ_BR = timezone(timedelta(hours=-3))
 UA = 'RISCO.sj/1.0 (IFSC Campus Sao Jose; painel de apoio a decisao; https://rmayormartins.github.io)'
 
@@ -63,6 +71,18 @@ URLS_CEMADEN = [
     'https://resources.cemaden.gov.br/dados/311_24.json',
 ]
 URL_SDC_FEED = 'https://www.defesacivil.sc.gov.br/categoria/alerta/feed/'
+URL_ANA_WS = 'https://www.ana.gov.br/hidrowebservice/EstacoesTelemetricas'
+URL_ANA_ANTIGA = 'https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos'
+
+# Estações fluviométricas telemétricas da ANA usadas pela Sala de Situação ANA/Epagri/Ciram
+# na bacia do rio Cubatão do Sul. Para trocar ou incluir estações (e informar as cotas de
+# atenção, alerta e emergência em cm), crie coletor/rios.json com a mesma estrutura.
+RIOS = [
+    {'codigo': '84100000', 'nome': 'Rio Cubatão do Sul em Poço Fundo', 'municipio': 'Santo Amaro da Imperatriz',
+     'ibges': ['4215703', '4211900'], 'cotas': None},
+    {'codigo': '84150100', 'nome': 'Rio Cubatão do Sul na ETA Casan (montante)', 'municipio': 'Palhoça',
+     'ibges': ['4211900'], 'cotas': None},
+]
 
 OFFLINE = None  # dict url -> caminho, usado nos testes
 REF_CEMADEN = None  # instante de referência dos acumulados (padrão: agora)
@@ -109,7 +129,7 @@ def ler_data(s):
 
 def baixar(url, timeout=60, limite=80_000_000, tentativas=3, cabecalhos=None):
     if OFFLINE is not None:
-        caminho = OFFLINE.get(url)
+        caminho = OFFLINE.get(url) or OFFLINE.get(url.split('?')[0])
         if not caminho:
             raise urllib.error.URLError('sem fixture para ' + url)
         with open(caminho, 'rb') as f:
@@ -345,6 +365,23 @@ def nivel_inmet(texto, severidade=''):
     return {'minor': 1, 'moderate': 1, 'severe': 2, 'extreme': 3}.get(severidade.lower(), 1)
 
 
+RE_CHUVA = re.compile(r'chuv|tempest|tempora|alag|inund|enchent|enxurr|desliz|movimento de massa|granizo|ciclone|vendaval|tornado|\braios?\b')
+RE_COSTEIRO = re.compile(r'ressaca|costeir|\bmare\b|agitacao (do )?mar|ondas? (alta|grande)|erosao costeira')
+RE_OUTRO = re.compile(r'temperatura|\bfrio\b|calor|geada|umidade|estiagem|\bseca\b|incendio|queimada|\bneve\b|nevoeiro|qualidade do ar|fumaca|poeira')
+
+
+def classe_alerta(*textos):
+    """chuva (conta no índice), costeiro (alimenta o módulo de alagamento) ou outro (informativo)."""
+    t = norm(' '.join(str(x) for x in textos if x))
+    if RE_CHUVA.search(t):
+        return 'chuva'
+    if RE_COSTEIRO.search(t):
+        return 'costeiro'
+    if RE_OUTRO.search(t):
+        return 'outro'
+    return 'chuva'  # na dúvida, conta (lado conservador)
+
+
 def resumo_alerta(cap, fonte, nivel, origem_nivel, hits):
     i = cap['info']
     polis, geos = [], set()
@@ -359,6 +396,7 @@ def resumo_alerta(cap, fonte, nivel, origem_nivel, hits):
         'id': cap['identifier'],
         'remetente': i['senderName'] or cap['sender'],
         'evento': i['event'],
+        'classe': classe_alerta(i['event'], i['headline']),
         'nivel': nivel,
         'nivel_origem': origem_nivel,
         'severidade': i['severity'],
@@ -470,6 +508,7 @@ def coletar_inmet_json(momento):
             'fonte': 'INMET', 'id': str(a.get('id') or a.get('codigo') or ''),
             'evento': str(a.get('descricao') or a.get('evento') or 'Aviso meteorológico'),
             'nivel': nivel_inmet(sev_txt + ' ' + str(a.get('aviso_cor') or '')), 'severidade': sev_txt,
+            'classe': classe_alerta(a.get('descricao') or a.get('evento') or ''),
             'titulo': str(a.get('descricao') or ''), 'descricao': limpar_html(str(a.get('riscos') or '')),
             'instrucao': limpar_html(str(a.get('instrucoes') or ''), 400),
             'inicio': iso(ini), 'fim': iso(fim), 'areas': limpar_html(areas[0]['desc'], 400),
@@ -653,6 +692,141 @@ def coletar_pluviometros():
     erro.chaves = chaves
     raise erro
 
+# ---------------------------------------------------------------- rios (ANA)
+def chave_com(d, inclui, exclui=()):
+    """Primeira chave cujo nome normalizado contém todos os termos de inclui e nenhum de exclui."""
+    for k in d:
+        nk = norm(k).replace('_', ' ')
+        if all(t in nk for t in inclui) and not any(t in nk for t in exclui):
+            return k
+    return None
+
+
+def data_ana(s):
+    m = re.search(r'(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})', str(s or ''))
+    if m:
+        a, mo, d, h, mi = map(int, m.groups())
+    else:
+        m = re.search(r'(\d{2})/(\d{2})/(\d{4})\D+(\d{2}):(\d{2})', str(s or ''))
+        if not m:
+            return None
+        d, mo, a, h, mi = map(int, m.groups())
+    fz = timezone.utc if os.environ.get('ANA_FUSO', '').lower() == 'utc' else TZ_BR
+    return datetime(a, mo, d, h, mi, tzinfo=fz)
+
+
+def token_ana(ident, senha):
+    bruto = baixar(URL_ANA_WS + '/OAUth/v1', timeout=40, tentativas=2,
+                   cabecalhos={'Identificador': ident, 'Senha': senha, 'Accept': 'application/json'})
+    pilha = [json.loads(bruto.decode('utf-8', 'replace'))]
+    while pilha:
+        x = pilha.pop()
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if 'token' in norm(k) and isinstance(v, str) and len(v) > 20:
+                    return v
+                pilha.append(v)
+        elif isinstance(x, list):
+            pilha.extend(x)
+    raise RuntimeError('a autenticação da ANA respondeu sem token')
+
+
+def serie_ana_ws(codigo, token, momento):
+    """Série telemétrica adotada (cota em cm) das últimas 48 h pelo Hidro-WebService."""
+    q = urllib.parse.urlencode({'Código da Estação': codigo, 'Tipo Filtro Data': 'DATA_LEITURA',
+                                'Data de Busca (yyyy-MM-dd)': momento.astimezone(TZ_BR).strftime('%Y-%m-%d'),
+                                'Range Intervalo de busca': 'DIAS_2'})
+    bruto = baixar(URL_ANA_WS + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + q, timeout=60, tentativas=2,
+                   cabecalhos={'Authorization': 'Bearer ' + token, 'Accept': 'application/json'})
+    d = json.loads(bruto.decode('utf-8', 'replace'))
+    itens = achar_lista(d.get('items', d) if isinstance(d, dict) else d)
+    pontos = []
+    for it in itens:
+        if not isinstance(it, dict):
+            continue
+        kd = chave_com(it, ('data', 'hora'), ('status',)) or chave_com(it, ('data',), ('status',))
+        kc = chave_com(it, ('cota',), ('status',)) or chave_com(it, ('nivel',), ('status',))
+        ks = chave_com(it, ('cota', 'status'))
+        kch = chave_com(it, ('chuva',), ('status',))
+        if not kd or not kc or str(it.get(ks) or '0').strip() == '2':  # 2 = dado ruim no controle de qualidade da ANA
+            continue
+        t, n = data_ana(it.get(kd)), num(it.get(kc))
+        if t is not None and n is not None:
+            pontos.append((t, n, num(it.get(kch)) if kch else None))
+    return pontos
+
+
+def serie_ana_antiga(codigo, momento):
+    """Serviço público antigo (Telemetria1WS), que a ANA vem substituindo pelo Hidro-WebService."""
+    m = momento.astimezone(TZ_BR)
+    q = urllib.parse.urlencode({'codEstacao': codigo, 'dataInicio': (m - timedelta(days=2)).strftime('%d/%m/%Y'), 'dataFim': m.strftime('%d/%m/%Y')})
+    raiz = xml_seguro(baixar(URL_ANA_ANTIGA + '?' + q, timeout=60, tentativas=2))
+    pontos = []
+    for el in raiz.iter():
+        f = {c.tag.split('}')[-1].lower(): (c.text or '').strip() for c in el}
+        if 'datahora' in f and 'nivel' in f:
+            t, n = data_ana(f['datahora']), num(f['nivel'])
+            if t is not None and n is not None:
+                pontos.append((t, n, num(f.get('chuva'))))
+    return pontos
+
+
+def resumir_rio(cfg, pontos, momento):
+    if not pontos:
+        return None
+    pontos.sort(key=lambda p: p[0])
+    if pontos[-1][0] > momento + timedelta(minutes=30):  # horário em UTC lido como Brasília: corrige
+        pontos = [(t.replace(tzinfo=timezone.utc), n, c) for t, n, c in pontos]
+    pontos = [p for p in pontos if p[0] <= momento + timedelta(minutes=30)]
+    if not pontos:
+        return None
+    t_ult, n_ult, _ = pontos[-1]
+    antes = [p for p in pontos if p[0] <= t_ult - timedelta(hours=24)]
+    janela = [p for p in pontos if p[0] > t_ult - timedelta(hours=24)]
+    chuvas = [c for _, _, c in janela if c is not None and c >= 0]
+    horas = {}
+    for t, n, _ in pontos:
+        if t > t_ult - timedelta(hours=48):
+            horas[t.astimezone(TZ_BR).strftime('%Y-%m-%dT%H:00')] = n
+    cotas = cfg.get('cotas') or None
+    estado = None
+    if isinstance(cotas, dict):
+        estado = 0
+        for i, k in enumerate(('atencao', 'alerta', 'emergencia'), 1):
+            v = num(cotas.get(k))
+            if v is not None and n_ult >= v:
+                estado = i
+    return {
+        'codigo': cfg['codigo'], 'nome': cfg.get('nome', cfg['codigo']), 'municipio': cfg.get('municipio', ''),
+        'ibges': cfg.get('ibges', []), 'lat': cfg.get('lat'), 'lon': cfg.get('lon'),
+        'nivel_cm': round(n_ult, 1), 'quando': iso(t_ult),
+        'variacao_24h_cm': round(n_ult - antes[-1][1], 1) if antes else None,
+        'max_24h_cm': round(max(n for _, n, _ in janela), 1),
+        'chuva_24h_mm': round(sum(chuvas), 1) if chuvas else None,
+        'cotas': cotas, 'estado': estado,
+        'serie': sorted(horas.items()),
+    }
+
+
+def coletar_rios(momento):
+    ident, senha = os.environ.get('ANA_IDENTIFICADOR', '').strip(), os.environ.get('ANA_SENHA', '').strip()
+    token = token_ana(ident, senha) if ident and senha else None
+    saida, erros = [], []
+    for r in RIOS:
+        try:
+            pontos = serie_ana_ws(r['codigo'], token, momento) if token else serie_ana_antiga(r['codigo'], momento)
+            res = resumir_rio(r, pontos, momento)
+            if res:
+                saida.append(res)
+            else:
+                erros.append('%s sem leituras recentes' % r['codigo'])
+        except Exception as e:  # noqa: BLE001
+            erros.append('%s: %s' % (r['codigo'], str(e)[:120]))
+    if not saida:
+        raise RuntimeError(' | '.join(erros) or 'nenhuma estação configurada')
+    via = 'Hidro-WebService' if token else 'serviço público antigo'
+    return saida, '%d de %d estações com leitura (%s)%s' % (len(saida), len(RIOS), via, ('; ' + ' | '.join(erros)) if erros else '')
+
 
 TRACOS = r'\s[-' + chr(0x2013) + chr(0x2014) + r']\s'  # separadores dos títulos da SDC/SC
 NIVEIS_SDC = [('alerta maximo', 4), ('emergencia', 4), ('alerta', 3), ('atencao', 2), ('observacao', 1)]
@@ -682,7 +856,7 @@ def coletar_sdc_site(momento):
         if not hits:
             continue
         saida.append({'fonte': 'SDC/SC (site)', 'id': txt(it, 'guid') or txt(it, 'link'), 'remetente': 'Defesa Civil de Santa Catarina',
-                      'evento': re.split(TRACOS, titulo)[-1].strip(), 'nivel': nivel, 'nivel_origem': 'título da publicação',
+                      'evento': re.split(TRACOS, titulo)[-1].strip(), 'classe': classe_alerta(titulo), 'nivel': nivel, 'nivel_origem': 'título da publicação',
                       'titulo': limpar_html(titulo, 240), 'descricao': limpar_html(corpo), 'inicio': iso(pub), 'fim': iso(fim),
                       'areas': '', 'ibges': hits, 'geocodes': [], 'poligonos': []})
     return saida, '%d publicações vigentes para a região' % len(saida)
@@ -710,9 +884,20 @@ def gravar_historico(pasta, momento, dados):
     novo_mes = not os.path.exists(arq_mes)
     if h == anterior and not novo_mes:
         return False
+    por_mun = {}
+    for e in dados['pluviometros']:
+        v = num((e.get('acc') or {}).get('24'))
+        if v is not None:
+            por_mun.setdefault(e['municipio'], []).append(v)
+
+    def mediana(v):
+        v = sorted(v)
+        k = len(v) // 2
+        return round(v[k] if len(v) % 2 else (v[k - 1] + v[k]) / 2, 1)
     linha = {'em': iso(momento), 'hash': h,
-             'alertas': [{k: a.get(k) for k in ('fonte', 'id', 'nivel', 'evento', 'titulo', 'inicio', 'fim', 'ibges')} for a in dados['defesa_civil'] + dados['inmet']],
-             'pluviometros_24h': {e['municipio']: e['acc'].get('24') for e in dados['pluviometros']}}
+             'alertas': [{k: a.get(k) for k in ('fonte', 'id', 'nivel', 'classe', 'evento', 'titulo', 'inicio', 'fim', 'ibges')} for a in dados['defesa_civil'] + dados['inmet']],
+             'pluviometros_24h': {m: mediana(v) for m, v in sorted(por_mun.items())},
+             'rios_cm': {r['codigo']: r['nivel_cm'] for r in dados.get('rios', [])}}
     with open(arq_mes, 'a', encoding='utf-8') as f:
         f.write(json.dumps(linha, ensure_ascii=False) + '\n')
     with open(arq_hash, 'w') as f:
@@ -721,7 +906,7 @@ def gravar_historico(pasta, momento, dados):
 
 
 def principal():
-    global OFFLINE, MUNICIPIOS, REF_CEMADEN
+    global OFFLINE, MUNICIPIOS, REF_CEMADEN, RIOS
     ap = argparse.ArgumentParser(description='Coletor do RISCO.sj')
     ap.add_argument('--saida', default='dados/alertas.json')
     ap.add_argument('--historico', default='dados/historico')
@@ -734,6 +919,9 @@ def principal():
     arq_mun = os.path.join(base, 'municipios.json')
     if os.path.exists(arq_mun):
         MUNICIPIOS = json.load(open(arq_mun, encoding='utf-8'))
+    arq_rios = os.path.join(base, 'rios.json')
+    if os.path.exists(arq_rios):
+        RIOS = json.load(open(arq_rios, encoding='utf-8'))
     if args.offline:
         mapa = json.load(open(os.path.join(args.offline, 'mapa.json'), encoding='utf-8'))
         OFFLINE = {u: os.path.join(args.offline, f) for u, f in mapa.items()}
@@ -742,7 +930,7 @@ def principal():
     if args.agora:
         REF_CEMADEN = ler_data(args.agora)
     dados = {'versao': 1, 'coletor': VERSAO, 'gerado_em': iso(momento), 'municipios': MUNICIPIOS,
-             'fontes': {}, 'defesa_civil': [], 'inmet': [], 'pluviometros': [], 'diagnostico': {}}
+             'fontes': {}, 'defesa_civil': [], 'inmet': [], 'pluviometros': [], 'rios': [], 'diagnostico': {}}
 
     res, st = executar('IDAP', coletar_idap, momento)
     st['url'] = URL_IDAP
@@ -774,6 +962,15 @@ def principal():
         dados['fontes']['cemaden_pluviometros'] = {'ok': False, 'msg': str(erro)[:400], 'ms': int(1000 * (time.time() - t0))}
         print('[falha] pluviômetros CEMADEN: %s' % erro, file=sys.stderr)
 
+    res, st = executar('Rios (ANA)', coletar_rios, momento)
+    if res:
+        dados['rios'] = res[0]
+    elif not (os.environ.get('ANA_IDENTIFICADOR') and os.environ.get('ANA_SENHA')):
+        st = {'ok': None, 'ms': st['ms'],
+              'msg': 'sem credenciais da ANA (secrets ANA_IDENTIFICADOR e ANA_SENHA); o serviço público antigo não respondeu: ' + st['msg'][:160]}
+    st['url'] = URL_ANA_WS
+    dados['fontes']['ana_rios'] = st
+
     if args.sdc_site or os.environ.get('RISCO_SDC_SITE') == '1':
         res, st = executar('SDC/SC site', coletar_sdc_site, momento)
         st['url'] = URL_SDC_FEED
@@ -794,8 +991,12 @@ def principal():
     for k, v in dados['fontes'].items():
         estado = 'ok' if v['ok'] else ('--' if v['ok'] is None else 'FALHA')
         print('  %-22s %-5s %s' % (k, estado, v['msg']))
-    print('  defesa civil: %d | inmet: %d | pluviômetros: %d | histórico %s' % (
-        len(dados['defesa_civil']), len(dados['inmet']), len(dados['pluviometros']), 'atualizado' if mudou else 'sem mudança'))
+    classes = {}
+    for a in dados['defesa_civil'] + dados['inmet']:
+        classes[a.get('classe')] = classes.get(a.get('classe'), 0) + 1
+    print('  defesa civil: %d | inmet: %d | classes: %s | pluviômetros: %d | rios: %d | histórico %s' % (
+        len(dados['defesa_civil']), len(dados['inmet']), ', '.join('%s %d' % kv for kv in sorted(classes.items(), key=str)) or 'nenhum',
+        len(dados['pluviometros']), len(dados['rios']), 'atualizado' if mudou else 'sem mudança'))
     return 0
 
 
