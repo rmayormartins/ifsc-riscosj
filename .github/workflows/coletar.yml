@@ -1,4 +1,4 @@
-# RISCO.sj: coleta alertas oficiais e pluviômetros a cada 10 minutos e publica o site.
+# RISCO.sj: coleta alertas oficiais, pluviômetros e nível dos rios a cada 10 minutos e publica o site.
 # Requer, em Settings > Pages, a fonte "GitHub Actions".
 name: Coletar dados e publicar
 
@@ -36,9 +36,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Coletar IDAP, INMET e pluviômetros
+      - name: Coletar IDAP, INMET, pluviômetros e rios
         env:
           RISCO_SDC_SITE: ${{ vars.RISCO_SDC_SITE }}
+          # Credenciais do Hidro-WebService da ANA (opcionais). Peça em hidro@ana.gov.br e
+          # cadastre em Settings > Secrets and variables > Actions.
+          ANA_IDENTIFICADOR: ${{ secrets.ANA_IDENTIFICADOR }}
+          ANA_SENHA: ${{ secrets.ANA_SENHA }}
         run: python coletor/coletar.py --saida dados/alertas.json --historico dados/historico
 
       - name: Guardar o histórico quando os alertas mudarem
