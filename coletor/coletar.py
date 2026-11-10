@@ -44,7 +44,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-VERSAO = '1.3.2'
+VERSAO = '1.3.3'
 TZ_BR = timezone(timedelta(hours=-3))
 UA = 'RISCO.sj/1.0 (IFSC Campus Sao Jose; painel de apoio a decisao; https://rmayormartins.github.io)'
 
@@ -719,11 +719,12 @@ DIAG_ANA = []  # tentativas da última coleta, gravadas em diagnostico.ana (sem 
 # Parâmetros conforme o exemplo em Java do manual do Hidro-WebService (versão 14/03/2025):
 # CodigoDaEstacao, TipoFiltroData e RangeIntervaloDeBusca; DataDeBusca no formato aaaa-mm-dd.
 # Os rótulos com acento ("Código da Estação") são só os nomes exibidos no Swagger.
-VARIANTES_ANA = [  # rota, intervalo de busca, envia DataDeBusca
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_2', True),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', True),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', False),
-    ('HidroinfoanaSerieTelemetricaDetalhada', 'DIAS_2', True),
+VARIANTES_ANA = [  # rota, intervalo de busca, envia DataDeBusca, cabeçalho Authorization
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_2', True, 'bearer'),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', True, 'bearer'),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', False, 'bearer'),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_2', True, 'puro'),
+    ('HidroinfoanaSerieTelemetricaDetalhada', 'DIAS_2', True, 'bearer'),
 ]
 
 
@@ -780,21 +781,31 @@ def token_ana(ident, senha):
         d = json.loads(texto)
     except ValueError:
         d = None
-    token, pilha = None, [d]
-    while pilha and token is None:
+    # Candidatos: campos com "token" no nome. Vence o tokenautenticacao do manual; depois, o que
+    # tiver cara de JWT (três partes separadas por ponto); por último, o mais longo.
+    cand, pilha = [], [d]
+    while pilha:
         x = pilha.pop()
         if isinstance(x, dict):
             for k, v in x.items():
-                if 'token' in norm(k) and isinstance(v, str) and len(v) > 20:
-                    token = v.strip()
-                    break
-                pilha.append(v)
+                if 'token' in norm(k) and isinstance(v, str) and len(v.strip()) > 20:
+                    cand.append((norm(k).replace('_', '').replace(' ', ''), v.strip()))
+                elif isinstance(v, (dict, list)):
+                    pilha.append(v)
         elif isinstance(x, list):
             pilha.extend(x)
+    cand.sort(key=lambda kv: (kv[0] != 'tokenautenticacao', kv[1].count('.') != 2, -len(kv[1])))
+    token = cand[0][1] if cand else None
     if token and token.lower().startswith('bearer '):
         token = token[7:].strip()
+    itens = d.get('items') if isinstance(d, dict) else None
     DIAG_ANA.append({'etapa': 'autenticação', 'http': st, 'token_recebido': bool(token),
                      'campos': sorted(d.keys()) if isinstance(d, dict) else None,
+                     'campos_items': sorted(itens.keys()) if isinstance(itens, dict) else type(itens).__name__,
+                     'campo_usado': cand[0][0] if cand else None, 'candidatos': len(cand),
+                     'token_tamanho': len(token) if token else 0, 'token_partes': token.count('.') + 1 if token else 0,
+                     'token_com_espaco': bool(token and re.search(r'\s', token)),
+                     'mensagem': ocultar(d.get('message', ''), [token, senha, ident])[:160] if isinstance(d, dict) else '',
                      'resposta': ocultar(texto, [token, senha, ident])[:240] if not token else ''})
     if st != 200 or not token:
         raise RuntimeError('autenticação recusada (HTTP %d): %s' % (st, ocultar(texto, [senha, ident])[:160]))
@@ -819,12 +830,13 @@ def pontos_ana(d):
     return pontos
 
 
-def consulta_ana(codigo, ctx, rota, faixa, com_data, dia):
+def consulta_ana(codigo, ctx, rota, faixa, com_data, dia, auth='bearer'):
     p = {'CodigoDaEstacao': codigo, 'TipoFiltroData': 'DATA_LEITURA'}
     if com_data:
         p['DataDeBusca'] = dia
     p['RangeIntervaloDeBusca'] = faixa
-    st, corpo = requisicao_ana(URL_ANA_WS + '/' + rota + '/v1?' + urllib.parse.urlencode(p), {'Authorization': 'Bearer ' + ctx['token']})
+    aut = ctx['token'] if auth == 'puro' else 'Bearer ' + ctx['token']
+    st, corpo = requisicao_ana(URL_ANA_WS + '/' + rota + '/v1?' + urllib.parse.urlencode(p), {'Authorization': aut})
     texto = texto_ana(corpo)
     resumo, pontos = ocultar(texto, ctx['segredos']), None
     if st == 200:
@@ -833,6 +845,7 @@ def consulta_ana(codigo, ctx, rota, faixa, com_data, dia):
         except ValueError:
             resumo = 'resposta sem JSON: ' + resumo
     DIAG_ANA.append({'etapa': 'série', 'estacao': codigo, 'rota': rota, 'intervalo': faixa, 'data': dia if com_data else None,
+                     'autorizacao': 'Bearer' if auth == 'bearer' else 'token sem Bearer',
                      'http': st, 'leituras': len(pontos) if pontos is not None else None, 'resposta': '' if pontos else resumo[:240]})
     return st, pontos, resumo
 
@@ -846,18 +859,18 @@ def serie_ana_ws(codigo, ctx, momento):
     dia = lambda n: (hoje + timedelta(days=n)).strftime('%Y-%m-%d')
     ordem = [ctx['variante']] if ctx.get('variante') else VARIANTES_ANA
     ultimo, vazio = None, False
-    for rota, faixa, com_data in ordem:
-        st, pontos, resumo = consulta_ana(codigo, ctx, rota, faixa, com_data, dia(0))
+    for rota, faixa, com_data, auth in ordem:
+        st, pontos, resumo = consulta_ana(codigo, ctx, rota, faixa, com_data, dia(0), auth)
         if st == 200 and pontos is not None:
             if com_data:
                 extra = []
                 if not pontos or max(q[0] for q in pontos) < momento - timedelta(hours=3):
-                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(1))[1] or []
+                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(1), auth)[1] or []
                 if pontos and min(q[0] for q in pontos) > momento - timedelta(hours=24):
-                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(-1))[1] or []
+                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(-1), auth)[1] or []
                 pontos = list({q[0]: q for q in pontos + extra}.values())
             if pontos:
-                ctx['variante'] = (rota, faixa, com_data)
+                ctx['variante'] = (rota, faixa, com_data, auth)
                 return pontos
             vazio, ultimo = True, 'HTTP 200 sem leituras em %s' % rota
             continue
@@ -1084,7 +1097,7 @@ def principal():
     st['url'] = URL_ANA_WS
     dados['fontes']['ana_rios'] = st
     if DIAG_ANA:
-        dados['diagnostico']['ana'] = DIAG_ANA[:16]
+        dados['diagnostico']['ana'] = DIAG_ANA[:20]
 
     if args.sdc_site or os.environ.get('RISCO_SDC_SITE') == '1':
         res, st = executar('SDC/SC site', coletar_sdc_site, momento)
