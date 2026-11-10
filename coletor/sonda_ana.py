@@ -111,29 +111,16 @@ def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
     ex = it[-1]
     return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
 
-print('\n== API do Rios On-line ==')
-RB = 'https://ciram.epagri.sc.gov.br/api/rios-online-server/'
-def get(u):
-    try:
-        r = urllib.request.Request(u, headers={'User-Agent': UA, 'Accept': 'application/json, application/xml, */*'})
-        with urllib.request.urlopen(r, timeout=40) as resp:
-            return resp.status, resp.headers.get('Content-Type'), resp.read()
-    except urllib.error.HTTPError as e:
-        return e.code, e.headers.get('Content-Type'), e.read()
-    except Exception as e:  # noqa: BLE001
-        return 0, '', str(e).encode()
-st, ct, b = get(RB + 'webresources/application.wadl')
-print('application.wadl: HTTP', st, ct, len(b), 'bytes')
-if st == 200:
-    w = txt(b)
-    for m in re.finditer(r'<resource path="([^"]+)"', w):
-        print('   recurso:', m.group(1))
-    for m in re.finditer(r'<param name="([^"]+)"[^>]*style="([^"]+)"', w):
-        print('   param:', m.group(1), m.group(2))
-for rota in ['webresources/monitoramentohidrologia', 'webresources/monitoramentohidrologia/estacoes', 'webresources/monitoramentohidrologia/estacao',
-             'webresources/monitoramentohidrologia/situacao', 'webresources/monitoramentohidrologia/ultimas', 'webresources/monitoramentohidrologia/boletim']:
-    st, ct, b = get(RB + rota)
-    print('%-55s HTTP %s %s %s' % (rota, st, ct, resumo(b, 200)))
+print('\n== Rios On-line: strings candidatas a rota ==')
+r = urllib.request.Request('https://ciram.epagri.sc.gov.br/rios-online/main.125be630afefcdb4.js', headers={'User-Agent': UA})
+with urllib.request.urlopen(r, timeout=60) as resp:
+    c = txt(resp.read())
+todas = set(re.findall(r"'([^'\\\n]{2,60})'", c)) | set(re.findall(r'"([^"\\\n]{2,60})"', c))
+pal = re.compile(r'^(get|lista|listar|busca|buscar|obter|consulta|consultar|ultima|ultimas|carrega|carregar|retorna|dados|estac|hidro|boletim|monitor|serie|nivel|bacia|cota|telemetr|situac|mapa|grafic)', re.I)
+cand = sorted(x for x in todas if ('/' in x and len(x) < 50 and not re.search(r'[<>{}()\s;=]|^https?:|\.(js|css|png|svg|jpg)$', x)) or (pal.match(x) and re.fullmatch(r'[A-Za-z0-9_/\-]+', x)))
+print(len(todas), 'strings;', len(cand), 'candidatas')
+for x in cand[:200]:
+    print('  ', x)
 raise SystemExit(0)
 
 print('\n== inventário ==')
