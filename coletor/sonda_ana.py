@@ -111,22 +111,29 @@ def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
     ex = it[-1]
     return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
 
-print('\n== Rios On-line: chamadas à API no main.js ==')
-r = urllib.request.Request('https://ciram.epagri.sc.gov.br/rios-online/main.125be630afefcdb4.js', headers={'User-Agent': UA})
-with urllib.request.urlopen(r, timeout=60) as resp:
-    c = txt(resp.read())
-vistos = set()
-for m in re.finditer(r'monitoramentohidrologia|rios-online-server', c):
-    trecho = c[max(0, m.start() - 160): m.end() + 220].replace('\n', ' ')
-    chave = trecho[150:260]
-    if chave in vistos:
-        continue
-    vistos.add(chave)
-    print('   ...', trecho, '...')
-    if len(vistos) >= 14:
-        break
-for m in sorted(set(re.findall(r'["\'`]((?:/|\.\./)?[A-Za-z]*(?:estac|ultim|dado|nivel|cota|serie|boletim|hidro|alerta|chuva|grafic)[A-Za-z0-9_/\-]*)["\'`]', c, re.I)))[:80]:
-    print('   termo:', m)
+print('\n== API do Rios On-line ==')
+RB = 'https://ciram.epagri.sc.gov.br/api/rios-online-server/'
+def get(u):
+    try:
+        r = urllib.request.Request(u, headers={'User-Agent': UA, 'Accept': 'application/json, application/xml, */*'})
+        with urllib.request.urlopen(r, timeout=40) as resp:
+            return resp.status, resp.headers.get('Content-Type'), resp.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers.get('Content-Type'), e.read()
+    except Exception as e:  # noqa: BLE001
+        return 0, '', str(e).encode()
+st, ct, b = get(RB + 'webresources/application.wadl')
+print('application.wadl: HTTP', st, ct, len(b), 'bytes')
+if st == 200:
+    w = txt(b)
+    for m in re.finditer(r'<resource path="([^"]+)"', w):
+        print('   recurso:', m.group(1))
+    for m in re.finditer(r'<param name="([^"]+)"[^>]*style="([^"]+)"', w):
+        print('   param:', m.group(1), m.group(2))
+for rota in ['webresources/monitoramentohidrologia', 'webresources/monitoramentohidrologia/estacoes', 'webresources/monitoramentohidrologia/estacao',
+             'webresources/monitoramentohidrologia/situacao', 'webresources/monitoramentohidrologia/ultimas', 'webresources/monitoramentohidrologia/boletim']:
+    st, ct, b = get(RB + rota)
+    print('%-55s HTTP %s %s %s' % (rota, st, ct, resumo(b, 200)))
 raise SystemExit(0)
 
 print('\n== inventário ==')
