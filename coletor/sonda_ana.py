@@ -111,37 +111,22 @@ def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
     ex = it[-1]
     return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
 
-print('\n== 84140000, rio Maruim ==')
-st, hd, b = req(BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode({'Código da Estação': '84140000'}), B)
-it = (json.loads(txt(b)).get('items') or [{}])[0] if st == 200 else {}
-print({k: it.get(k) for k in ['Estacao_Nome', 'Municipio_Nome', 'Rio_Nome', 'Latitude', 'Longitude', 'Altitude', 'Area_Drenagem', 'Operadora_Sigla', 'Responsavel_Sigla', 'Data_Periodo_Telemetrica_Inicio']})
-q = {'Código da Estação': '84140000', 'Tipo Filtro Data': 'DATA_LEITURA', 'Data de Busca (yyyy-MM-dd)': dia(0), 'Range Intervalo de busca': 'DIAS_30'}
-st, hd, b = req(BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode(q), B)
-its = json.loads(txt(b)).get('items') or [] if st == 200 else []
-cotas = [float(x['Cota_Adotada']) for x in its if x.get('Cota_Adotada') not in (None, '')]
-print('30 dias: %d leituras, cota mín %.0f, máx %.0f cm | de %s a %s' % (len(its), min(cotas), max(cotas), min(x['Data_Hora_Medicao'] for x in its), max(x['Data_Hora_Medicao'] for x in its)) if cotas else 'sem cotas')
-for x in sorted(its, key=lambda x: x['Data_Hora_Medicao'])[-4:]:
-    print('   ', {k: x.get(k) for k in ['Data_Hora_Medicao', 'Cota_Adotada', 'Cota_Adotada_Status', 'Chuva_Adotada', 'Vazao_Adotada', 'Data_Atualizacao']})
-q['Data de Busca (yyyy-MM-dd)'] = dia(0); q['Range Intervalo de busca'] = 'DIAS_2'
-st, hd, b = req(BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode(q), B)
-its2 = json.loads(txt(b)).get('items') or [] if st == 200 else []
-print('DIAS_2 a partir de hoje: %d leituras, de %s a %s' % (len(its2), min((x['Data_Hora_Medicao'] for x in its2), default='-'), max((x['Data_Hora_Medicao'] for x in its2), default='-')))
-
-print('\n== Rios On-line: endereços no main.js ==')
-for js in ['main.125be630afefcdb4.js']:
-    try:
-        r = urllib.request.Request('https://ciram.epagri.sc.gov.br/rios-online/' + js, headers={'User-Agent': UA})
-        with urllib.request.urlopen(r, timeout=60) as resp:
-            c = txt(resp.read())
-        print(js, len(c), 'bytes')
-        urls = sorted(set(re.findall(r'https?://[A-Za-z0-9._:/\-]+', c)))
-        for u in urls:
-            if not re.search(r'w3\.org|angular|googleapis|gstatic|github|mozilla|openstreetmap|arcgis|leaflet|mapbox|apple\.com|ietf', u):
-                print('   url:', u[:160])
-        for m in sorted(set(re.findall(r'["\'`](/[A-Za-z0-9_\-]*(?:api|estac|nivel|rio|boletim|dados|hidro|telem)[A-Za-z0-9_/\-\.]*)', c, re.I)))[:50]:
-            print('   rota:', m[:160])
-    except Exception as e:  # noqa: BLE001
-        print(js, 'falhou:', str(e)[:120])
+print('\n== Rios On-line: chamadas à API no main.js ==')
+r = urllib.request.Request('https://ciram.epagri.sc.gov.br/rios-online/main.125be630afefcdb4.js', headers={'User-Agent': UA})
+with urllib.request.urlopen(r, timeout=60) as resp:
+    c = txt(resp.read())
+vistos = set()
+for m in re.finditer(r'monitoramentohidrologia|rios-online-server', c):
+    trecho = c[max(0, m.start() - 160): m.end() + 220].replace('\n', ' ')
+    chave = trecho[150:260]
+    if chave in vistos:
+        continue
+    vistos.add(chave)
+    print('   ...', trecho, '...')
+    if len(vistos) >= 14:
+        break
+for m in sorted(set(re.findall(r'["\'`]((?:/|\.\./)?[A-Za-z]*(?:estac|ultim|dado|nivel|cota|serie|boletim|hidro|alerta|chuva|grafic)[A-Za-z0-9_/\-]*)["\'`]', c, re.I)))[:80]:
+    print('   termo:', m)
 raise SystemExit(0)
 
 print('\n== inventário ==')
