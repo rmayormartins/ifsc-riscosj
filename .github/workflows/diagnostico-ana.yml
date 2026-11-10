@@ -1,0 +1,21 @@
+# Temporário: diagnóstico do Hidro-WebService da ANA. Roda só em push no branch diagnostico-ana.
+name: Diagnóstico ANA
+on:
+  push:
+    branches: [diagnostico-ana]
+permissions:
+  contents: read
+jobs:
+  sondar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sondar o Hidro-WebService
+        env:
+          ANA_IDENTIFICADOR: ${{ secrets.ANA_IDENTIFICADOR }}
+          ANA_SENHA: ${{ secrets.ANA_SENHA }}
+        run: python coletor/sonda_ana.py
