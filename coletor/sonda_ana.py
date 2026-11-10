@@ -111,6 +111,38 @@ def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
     ex = it[-1]
     return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
 
+print('\n== controle: estação do exemplo do manual (15400000, Porto Velho) ==')
+print(serie('HidroinfoanaSerieTelemetricaAdotada', '15400000', dia(0), 'DIAS_2'))
+
+print('\n== inventário de SC ==')
+lista = []
+for q in [{'Unidade Federativa': 'SC'}, {'UF': 'SC'}, {'Sigla UF': 'SC'}]:
+    st, hd, b = req(BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode(q), B)
+    print(list(q)[0], 'HTTP', st, resumo(b, 140) if st != 200 else 'itens: %d' % len(json.loads(txt(b)).get('items') or []))
+    if st == 200 and (json.loads(txt(b)).get('items') or []):
+        lista = json.loads(txt(b))['items']
+        break
+def f(v):
+    try:
+        return float(str(v).replace(',', '.'))
+    except ValueError:
+        return None
+perto = []
+for e in lista:
+    la, lo = f(e.get('Latitude')), f(e.get('Longitude'))
+    if la is None or lo is None or not (-28.05 <= la <= -27.2 and -49.2 <= lo <= -48.3):
+        continue
+    if str(e.get('Tipo_Estacao_Telemetrica')) != '1' or str(e.get('Operando')) != '1':
+        continue
+    perto.append(e)
+print('telemétricas operando na Grande Florianópolis:', len(perto))
+for e in perto[:40]:
+    print('  %s %-28s %-24s %-22s %-10s %s op %s' % (e.get('codigoestacao'), str(e.get('Estacao_Nome'))[:28], str(e.get('Municipio_Nome'))[:24], str(e.get('Rio_Nome'))[:22], e.get('Tipo_Estacao'), e.get('Latitude') + ',' + e.get('Longitude'), e.get('Operadora_Sigla')))
+print('\n== quais têm leituras na série adotada (hoje, DIAS_2) ==')
+for e in perto[:30]:
+    print('  %s %-28s %s' % (e.get('codigoestacao'), str(e.get('Estacao_Nome'))[:28], serie('HidroinfoanaSerieTelemetricaAdotada', e.get('codigoestacao'), dia(0), 'DIAS_2')[:150]))
+raise SystemExit(0)
+
 print('\n== inventário ==')
 for cod in ['84100000', '84150100']:
     st, hd, b = req(BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode({'Código da Estação': cod}), B)
