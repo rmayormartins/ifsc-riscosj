@@ -44,7 +44,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-VERSAO = '1.3.1'
+VERSAO = '1.3.2'
 TZ_BR = timezone(timedelta(hours=-3))
 UA = 'RISCO.sj/1.0 (IFSC Campus Sao Jose; painel de apoio a decisao; https://rmayormartins.github.io)'
 
@@ -716,12 +716,22 @@ def data_ana(s):
 
 
 DIAG_ANA = []  # tentativas da última coleta, gravadas em diagnostico.ana (sem token, senha nem identificador)
-VARIANTES_ANA = [  # rota, forma do cabeçalho Authorization, intervalo de busca
-    ('HidroinfoanaSerieTelemetricaAdotada', 'bearer', 'DIAS_2'),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'puro', 'DIAS_2'),
-    ('HidroinfoanaSerieTelemetricaDetalhada', 'bearer', 'DIAS_2'),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'bearer', 'HORA_24'),
+# Parâmetros conforme o exemplo em Java do manual do Hidro-WebService (versão 14/03/2025):
+# CodigoDaEstacao, TipoFiltroData e RangeIntervaloDeBusca; DataDeBusca no formato aaaa-mm-dd.
+# Os rótulos com acento ("Código da Estação") são só os nomes exibidos no Swagger.
+VARIANTES_ANA = [  # rota, intervalo de busca, envia DataDeBusca
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_2', True),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', True),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', False),
+    ('HidroinfoanaSerieTelemetricaDetalhada', 'DIAS_2', True),
 ]
+
+
+def texto_ana(corpo):
+    try:
+        return corpo.decode('utf-8')
+    except UnicodeDecodeError:
+        return corpo.decode('latin-1')
 
 
 def requisicao_ana(url, cabecalhos):
@@ -765,7 +775,7 @@ def ocultar(texto, segredos):
 
 def token_ana(ident, senha):
     st, corpo = requisicao_ana(URL_ANA_WS + '/OAUth/v1', {'Identificador': ident, 'Senha': senha})
-    texto = corpo.decode('utf-8', 'replace')
+    texto = texto_ana(corpo)
     try:
         d = json.loads(texto)
     except ValueError:
@@ -809,36 +819,49 @@ def pontos_ana(d):
     return pontos
 
 
+def consulta_ana(codigo, ctx, rota, faixa, com_data, dia):
+    p = {'CodigoDaEstacao': codigo, 'TipoFiltroData': 'DATA_LEITURA'}
+    if com_data:
+        p['DataDeBusca'] = dia
+    p['RangeIntervaloDeBusca'] = faixa
+    st, corpo = requisicao_ana(URL_ANA_WS + '/' + rota + '/v1?' + urllib.parse.urlencode(p), {'Authorization': 'Bearer ' + ctx['token']})
+    texto = texto_ana(corpo)
+    resumo, pontos = ocultar(texto, ctx['segredos']), None
+    if st == 200:
+        try:
+            pontos = pontos_ana(json.loads(texto))
+        except ValueError:
+            resumo = 'resposta sem JSON: ' + resumo
+    DIAG_ANA.append({'etapa': 'série', 'estacao': codigo, 'rota': rota, 'intervalo': faixa, 'data': dia if com_data else None,
+                     'http': st, 'leituras': len(pontos) if pontos is not None else None, 'resposta': '' if pontos else resumo[:240]})
+    return st, pontos, resumo
+
+
 def serie_ana_ws(codigo, ctx, momento):
-    """Série telemétrica (cota em cm) das últimas 48 h pelo Hidro-WebService. Testa as variantes de
-    rota e de cabeçalho até uma funcionar e reaproveita a vencedora nas demais estações."""
+    """Série telemétrica (cota em cm) recente pelo Hidro-WebService. Testa as variantes de rota e
+    intervalo até uma funcionar e reaproveita a vencedora nas demais estações. Como o manual não
+    diz se o intervalo conta para trás ou para frente da DataDeBusca, consulta também amanhã e
+    ontem quando a resposta não cobre as últimas horas ou as últimas 24 h, e junta as leituras."""
+    hoje = momento.astimezone(TZ_BR).date()
+    dia = lambda n: (hoje + timedelta(days=n)).strftime('%Y-%m-%d')
     ordem = [ctx['variante']] if ctx.get('variante') else VARIANTES_ANA
     ultimo, vazio = None, False
-    for rota, auth, faixa in ordem:
-        q = urllib.parse.urlencode({'Código da Estação': codigo, 'Tipo Filtro Data': 'DATA_LEITURA',
-                                    'Data de Busca (yyyy-MM-dd)': momento.astimezone(TZ_BR).strftime('%Y-%m-%d'),
-                                    'Range Intervalo de busca': faixa}, quote_via=urllib.parse.quote)
-        aut = ctx['token'] if auth == 'puro' else 'Bearer ' + ctx['token']
-        st, corpo = requisicao_ana(URL_ANA_WS + '/' + rota + '/v1?' + q, {'Authorization': aut})
-        texto = corpo.decode('utf-8', 'replace')
-        resumo = ocultar(texto, ctx['segredos'])
-        pontos = None
-        if st == 200:
-            try:
-                pontos = pontos_ana(json.loads(texto))
-            except ValueError:
-                resumo = 'resposta sem JSON: ' + resumo
-        DIAG_ANA.append({'etapa': 'série', 'estacao': codigo, 'rota': rota, 'autorizacao': 'Bearer' if auth == 'bearer' else 'token sem Bearer',
-                         'intervalo': faixa, 'http': st, 'leituras': len(pontos) if pontos is not None else None,
-                         'resposta': '' if pontos else resumo[:240]})
-        if pontos:
-            ctx['variante'] = (rota, auth, faixa)
-            return pontos
-        if pontos is not None:
-            vazio = True
-            ultimo = 'HTTP 200 sem leituras em %s' % rota
-        else:
-            ultimo = 'HTTP %d: %s' % (st, resumo[:160] or 'sem corpo')
+    for rota, faixa, com_data in ordem:
+        st, pontos, resumo = consulta_ana(codigo, ctx, rota, faixa, com_data, dia(0))
+        if st == 200 and pontos is not None:
+            if com_data:
+                extra = []
+                if not pontos or max(q[0] for q in pontos) < momento - timedelta(hours=3):
+                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(1))[1] or []
+                if pontos and min(q[0] for q in pontos) > momento - timedelta(hours=24):
+                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(-1))[1] or []
+                pontos = list({q[0]: q for q in pontos + extra}.values())
+            if pontos:
+                ctx['variante'] = (rota, faixa, com_data)
+                return pontos
+            vazio, ultimo = True, 'HTTP 200 sem leituras em %s' % rota
+            continue
+        ultimo = 'HTTP %d: %s' % (st, resumo[:160] or 'sem corpo')
     if vazio:
         return []
     raise RuntimeError(ultimo)
@@ -1061,7 +1084,7 @@ def principal():
     st['url'] = URL_ANA_WS
     dados['fontes']['ana_rios'] = st
     if DIAG_ANA:
-        dados['diagnostico']['ana'] = DIAG_ANA[:12]
+        dados['diagnostico']['ana'] = DIAG_ANA[:16]
 
     if args.sdc_site or os.environ.get('RISCO_SDC_SITE') == '1':
         res, st = executar('SDC/SC site', coletar_sdc_site, momento)
