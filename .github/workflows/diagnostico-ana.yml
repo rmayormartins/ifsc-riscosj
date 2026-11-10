@@ -1,4 +1,4 @@
-# Temporário: diagnóstico do Hidro-WebService da ANA. Roda só em push no branch diagnostico-ana.
+# Temporário: verifica o coletor contra a ANA real. Roda só em push no branch diagnostico-ana.
 name: Diagnóstico ANA
 on:
   push:
@@ -14,8 +14,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Sondar o Hidro-WebService
+      - name: Rodar o coletor
         env:
           ANA_IDENTIFICADOR: ${{ secrets.ANA_IDENTIFICADOR }}
           ANA_SENHA: ${{ secrets.ANA_SENHA }}
-        run: python coletor/sonda_ana.py
+        run: |
+          python coletor/coletar.py --saida /tmp/a.json --historico /tmp/h
+          python -c "import json; d=json.load(open('/tmp/a.json')); print('RIOS', json.dumps([{k: v for k, v in r.items() if k != 'serie'} for r in d['rios']], ensure_ascii=False)); print('SERIE', len(d['rios'][0]['serie']) if d['rios'] else 0, d['rios'][0]['serie'][-3:] if d['rios'] else ''); print('DIAG', json.dumps(d['diagnostico'].get('ana'), ensure_ascii=False))"
