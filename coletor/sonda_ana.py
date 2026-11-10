@@ -135,12 +135,29 @@ for e in lista:
     if str(e.get('Tipo_Estacao_Telemetrica')) != '1' or str(e.get('Operando')) != '1':
         continue
     perto.append(e)
-print('telemétricas operando na Grande Florianópolis:', len(perto))
-for e in perto[:40]:
-    print('  %s %-28s %-24s %-22s %-10s %s op %s' % (e.get('codigoestacao'), str(e.get('Estacao_Nome'))[:28], str(e.get('Municipio_Nome'))[:24], str(e.get('Rio_Nome'))[:22], e.get('Tipo_Estacao'), e.get('Latitude') + ',' + e.get('Longitude'), e.get('Operadora_Sigla')))
-print('\n== quais têm leituras na série adotada (hoje, DIAS_2) ==')
-for e in perto[:30]:
-    print('  %s %-28s %s' % (e.get('codigoestacao'), str(e.get('Estacao_Nome'))[:28], serie('HidroinfoanaSerieTelemetricaAdotada', e.get('codigoestacao'), dia(0), 'DIAS_2')[:150]))
+flu = [e for e in perto if str(e.get('Tipo_Estacao')).lower().startswith('fluvio')]
+print('fluviométricas telemétricas operando na região:', len(flu))
+for e in flu:
+    print('  %s %-30s %-24s %-24s %s,%s op %s | %s' % (e.get('codigoestacao'), str(e.get('Estacao_Nome'))[:30], str(e.get('Municipio_Nome'))[:24], str(e.get('Rio_Nome'))[:24], e.get('Latitude'), e.get('Longitude'), e.get('Operadora_Sigla'),
+        serie('HidroinfoanaSerieTelemetricaAdotada', e.get('codigoestacao'), dia(0), 'DIAS_2')[:110]))
+print('\n== Rios On-line (Epagri/Ciram) ==')
+PADRAO = re.compile('["\'(]([^"\'()\\s]*(?:\\.json|\\.php|/api/|ajax|getJson|wp-json|dados|estac|nivel)[^"\'()\\s]*)["\')]', re.I)
+for u in ['https://ciram.epagri.sc.gov.br/rios-online/', 'https://ciram.epagri.sc.gov.br/index.php/rios-online/']:
+    try:
+        r = urllib.request.Request(u, headers={'User-Agent': UA, 'Accept': '*/*'})
+        with urllib.request.urlopen(r, timeout=40) as resp:
+            h = txt(resp.read())
+        tit = re.search(r'<title>(.*?)</title>', h, re.S | re.I)
+        print(u, 'HTTP 200,', len(h), 'bytes | título:', tit.group(1).strip()[:80] if tit else '')
+        for x in sorted(set(PADRAO.findall(h)))[:40]:
+            print('   ', x[:160])
+        for m in re.finditer(r'<iframe[^>]+src=["\']([^"\']+)', h, re.I):
+            print('    iframe:', m.group(1)[:160])
+        for m in re.finditer(r'<script[^>]+src=["\']([^"\']+)', h, re.I):
+            print('    script:', m.group(1)[:160])
+        break
+    except Exception as e:  # noqa: BLE001
+        print(u, 'falhou:', str(e)[:120])
 raise SystemExit(0)
 
 print('\n== inventário ==')
