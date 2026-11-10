@@ -44,7 +44,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-VERSAO = '1.3'
+VERSAO = '1.3.1'
 TZ_BR = timezone(timedelta(hours=-3))
 UA = 'RISCO.sj/1.0 (IFSC Campus Sao Jose; painel de apoio a decisao; https://rmayormartins.github.io)'
 
@@ -715,30 +715,83 @@ def data_ana(s):
     return datetime(a, mo, d, h, mi, tzinfo=fz)
 
 
+DIAG_ANA = []  # tentativas da última coleta, gravadas em diagnostico.ana (sem token, senha nem identificador)
+VARIANTES_ANA = [  # rota, forma do cabeçalho Authorization, intervalo de busca
+    ('HidroinfoanaSerieTelemetricaAdotada', 'bearer', 'DIAS_2'),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'puro', 'DIAS_2'),
+    ('HidroinfoanaSerieTelemetricaDetalhada', 'bearer', 'DIAS_2'),
+    ('HidroinfoanaSerieTelemetricaAdotada', 'bearer', 'HORA_24'),
+]
+
+
+def requisicao_ana(url, cabecalhos):
+    """GET que devolve (status, corpo) também nos erros HTTP, para registrar o que a ANA respondeu."""
+    if OFFLINE is not None:
+        try:
+            return 200, baixar(url)
+        except Exception as e:  # noqa: BLE001
+            return 404, str(e).encode()
+    h = {'User-Agent': UA, 'Accept': 'application/json', 'Accept-Encoding': 'gzip'}
+    h.update(cabecalhos)
+    ultimo = None
+    for t in range(2):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=60) as r:
+                dados = r.read(20_000_000)
+                if (r.headers.get('Content-Encoding') or '').lower() == 'gzip':
+                    dados = gzip.decompress(dados)
+                return r.status, dados
+        except urllib.error.HTTPError as e:
+            corpo = e.read(4000) or b''
+            if (e.headers.get('Content-Encoding') or '').lower() == 'gzip':
+                try:
+                    corpo = gzip.decompress(corpo)
+                except Exception:  # noqa: BLE001
+                    pass
+            return e.code, corpo
+        except Exception as e:  # noqa: BLE001
+            ultimo = e
+            time.sleep(2 * (t + 1))
+    raise ultimo
+
+
+def ocultar(texto, segredos):
+    texto = str(texto)
+    for x in segredos:
+        if x and len(x) >= 4:
+            texto = texto.replace(x, '***')
+    return re.sub(r'\s+', ' ', texto).strip()
+
+
 def token_ana(ident, senha):
-    bruto = baixar(URL_ANA_WS + '/OAUth/v1', timeout=40, tentativas=2,
-                   cabecalhos={'Identificador': ident, 'Senha': senha, 'Accept': 'application/json'})
-    pilha = [json.loads(bruto.decode('utf-8', 'replace'))]
-    while pilha:
+    st, corpo = requisicao_ana(URL_ANA_WS + '/OAUth/v1', {'Identificador': ident, 'Senha': senha})
+    texto = corpo.decode('utf-8', 'replace')
+    try:
+        d = json.loads(texto)
+    except ValueError:
+        d = None
+    token, pilha = None, [d]
+    while pilha and token is None:
         x = pilha.pop()
         if isinstance(x, dict):
             for k, v in x.items():
                 if 'token' in norm(k) and isinstance(v, str) and len(v) > 20:
-                    return v
+                    token = v.strip()
+                    break
                 pilha.append(v)
         elif isinstance(x, list):
             pilha.extend(x)
-    raise RuntimeError('a autenticação da ANA respondeu sem token')
+    if token and token.lower().startswith('bearer '):
+        token = token[7:].strip()
+    DIAG_ANA.append({'etapa': 'autenticação', 'http': st, 'token_recebido': bool(token),
+                     'campos': sorted(d.keys()) if isinstance(d, dict) else None,
+                     'resposta': ocultar(texto, [token, senha, ident])[:240] if not token else ''})
+    if st != 200 or not token:
+        raise RuntimeError('autenticação recusada (HTTP %d): %s' % (st, ocultar(texto, [senha, ident])[:160]))
+    return token
 
 
-def serie_ana_ws(codigo, token, momento):
-    """Série telemétrica adotada (cota em cm) das últimas 48 h pelo Hidro-WebService."""
-    q = urllib.parse.urlencode({'Código da Estação': codigo, 'Tipo Filtro Data': 'DATA_LEITURA',
-                                'Data de Busca (yyyy-MM-dd)': momento.astimezone(TZ_BR).strftime('%Y-%m-%d'),
-                                'Range Intervalo de busca': 'DIAS_2'})
-    bruto = baixar(URL_ANA_WS + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + q, timeout=60, tentativas=2,
-                   cabecalhos={'Authorization': 'Bearer ' + token, 'Accept': 'application/json'})
-    d = json.loads(bruto.decode('utf-8', 'replace'))
+def pontos_ana(d):
     itens = achar_lista(d.get('items', d) if isinstance(d, dict) else d)
     pontos = []
     for it in itens:
@@ -754,6 +807,41 @@ def serie_ana_ws(codigo, token, momento):
         if t is not None and n is not None:
             pontos.append((t, n, num(it.get(kch)) if kch else None))
     return pontos
+
+
+def serie_ana_ws(codigo, ctx, momento):
+    """Série telemétrica (cota em cm) das últimas 48 h pelo Hidro-WebService. Testa as variantes de
+    rota e de cabeçalho até uma funcionar e reaproveita a vencedora nas demais estações."""
+    ordem = [ctx['variante']] if ctx.get('variante') else VARIANTES_ANA
+    ultimo, vazio = None, False
+    for rota, auth, faixa in ordem:
+        q = urllib.parse.urlencode({'Código da Estação': codigo, 'Tipo Filtro Data': 'DATA_LEITURA',
+                                    'Data de Busca (yyyy-MM-dd)': momento.astimezone(TZ_BR).strftime('%Y-%m-%d'),
+                                    'Range Intervalo de busca': faixa}, quote_via=urllib.parse.quote)
+        aut = ctx['token'] if auth == 'puro' else 'Bearer ' + ctx['token']
+        st, corpo = requisicao_ana(URL_ANA_WS + '/' + rota + '/v1?' + q, {'Authorization': aut})
+        texto = corpo.decode('utf-8', 'replace')
+        resumo = ocultar(texto, ctx['segredos'])
+        pontos = None
+        if st == 200:
+            try:
+                pontos = pontos_ana(json.loads(texto))
+            except ValueError:
+                resumo = 'resposta sem JSON: ' + resumo
+        DIAG_ANA.append({'etapa': 'série', 'estacao': codigo, 'rota': rota, 'autorizacao': 'Bearer' if auth == 'bearer' else 'token sem Bearer',
+                         'intervalo': faixa, 'http': st, 'leituras': len(pontos) if pontos is not None else None,
+                         'resposta': '' if pontos else resumo[:240]})
+        if pontos:
+            ctx['variante'] = (rota, auth, faixa)
+            return pontos
+        if pontos is not None:
+            vazio = True
+            ultimo = 'HTTP 200 sem leituras em %s' % rota
+        else:
+            ultimo = 'HTTP %d: %s' % (st, resumo[:160] or 'sem corpo')
+    if vazio:
+        return []
+    raise RuntimeError(ultimo)
 
 
 def serie_ana_antiga(codigo, momento):
@@ -810,11 +898,13 @@ def resumir_rio(cfg, pontos, momento):
 
 def coletar_rios(momento):
     ident, senha = os.environ.get('ANA_IDENTIFICADOR', '').strip(), os.environ.get('ANA_SENHA', '').strip()
+    DIAG_ANA.clear()
     token = token_ana(ident, senha) if ident and senha else None
+    ctx = {'token': token, 'segredos': [token, senha, ident]}
     saida, erros = [], []
     for r in RIOS:
         try:
-            pontos = serie_ana_ws(r['codigo'], token, momento) if token else serie_ana_antiga(r['codigo'], momento)
+            pontos = serie_ana_ws(r['codigo'], ctx, momento) if token else serie_ana_antiga(r['codigo'], momento)
             res = resumir_rio(r, pontos, momento)
             if res:
                 saida.append(res)
@@ -824,7 +914,7 @@ def coletar_rios(momento):
             erros.append('%s: %s' % (r['codigo'], str(e)[:120]))
     if not saida:
         raise RuntimeError(' | '.join(erros) or 'nenhuma estação configurada')
-    via = 'Hidro-WebService' if token else 'serviço público antigo'
+    via = ('Hidro-WebService, ' + ctx['variante'][0].replace('HidroinfoanaSerieTelemetrica', 'série ').lower()) if token and ctx.get('variante') else 'Hidro-WebService' if token else 'serviço público antigo'
     return saida, '%d de %d estações com leitura (%s)%s' % (len(saida), len(RIOS), via, ('; ' + ' | '.join(erros)) if erros else '')
 
 
@@ -970,6 +1060,8 @@ def principal():
               'msg': 'sem credenciais da ANA (secrets ANA_IDENTIFICADOR e ANA_SENHA); o serviço público antigo não respondeu: ' + st['msg'][:160]}
     st['url'] = URL_ANA_WS
     dados['fontes']['ana_rios'] = st
+    if DIAG_ANA:
+        dados['diagnostico']['ana'] = DIAG_ANA[:12]
 
     if args.sdc_site or os.environ.get('RISCO_SDC_SITE') == '1':
         res, st = executar('SDC/SC site', coletar_sdc_site, momento)
