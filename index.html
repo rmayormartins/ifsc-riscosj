@@ -2463,8 +2463,7 @@ function aplicarDemo() {
   S.mareEstado = 'demo';
   const serieRio = (n0, n1) => Array.from({ length: 48 }, (_, k) => [deMin(paraMin(agoraLocal()) - (47 - k) * 60).slice(0, 13) + ':00', Math.round(n0 + (n1 - n0) * Math.pow(k / 47, 2))]);
   S.rios = { estado: 'demo', estacoes: [
-    { codigo: '84100000', nome: 'Rio Cubatão do Sul em Poço Fundo', municipio: 'Santo Amaro da Imperatriz', ibges: ['4215703', '4211900'], nivel_cm: 312, variacao_24h_cm: 148, quando: agoraLocal(), cotas: { atencao: 250, alerta: 300, emergencia: 380 }, estado: 2, serie: serieRio(150, 312) },
-    { codigo: '84150100', nome: 'Rio Cubatão do Sul na ETA Casan (montante)', municipio: 'Palhoça', ibges: ['4211900'], nivel_cm: 205, variacao_24h_cm: 61, quando: agoraLocal(), cotas: null, estado: null, serie: serieRio(140, 205) }
+    { codigo: '84140000', nome: 'Rio Maruim na CGH Pingo de Ouro (jusante)', municipio: 'São José', ibges: ['4216602', '4211900'], nivel_cm: 312, variacao_24h_cm: 146, vazao_m3s: 21.6, quando: agoraLocal(), cotas: { atencao: 250, alerta: 300, emergencia: 380 }, estado: 2, serie: serieRio(166, 312) }
   ] };
   S.dc = { estado: 'demo', alertas: [{ fonte: 'Defesa Civil (IDAP)', id: 'demo-1', remetente: 'Defesa Civil de Santa Catarina', evento: 'Chuvas Intensas', nivel: 3, nivel_origem: 'demonstração',
     titulo: 'Alerta alto: chuva intensa com risco de alagamentos e deslizamentos na Grande Florianópolis', ini: h + 'T15:00', fim: somaDias(h, 1) + 'T06:00',
