@@ -1,4 +1,4 @@
-# RISCO.sj: coleta alertas oficiais, pluviômetros e nível dos rios a cada 10 minutos e publica o site.
+# RISCO.sj: coleta alertas oficiais, pluviômetros, nível dos rios e setorização de risco a cada 10 minutos e publica o site.
 # Requer, em Settings > Pages, a fonte "GitHub Actions".
 name: Coletar dados e publicar
 
@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths-ignore:
       - 'dados/historico/**'
+      - 'dados/areas-risco.geojson'
 
 permissions:
   contents: write
@@ -36,24 +37,27 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Coletar IDAP, INMET, pluviômetros e rios
+      - name: Coletar IDAP, INMET, pluviômetros, rios e setorização
         env:
           RISCO_SDC_SITE: ${{ vars.RISCO_SDC_SITE }}
+          # Setorização do SGB: 0 desliga, forcar baixa de novo nesta execução (padrão: semanal).
+          RISCO_SGB: ${{ vars.RISCO_SGB }}
           # Credenciais do Hidro-WebService da ANA (opcionais). Peça em hidro@ana.gov.br e
           # cadastre em Settings > Secrets and variables > Actions.
           ANA_IDENTIFICADOR: ${{ secrets.ANA_IDENTIFICADOR }}
           ANA_SENHA: ${{ secrets.ANA_SENHA }}
-        run: python coletor/coletar.py --saida dados/alertas.json --historico dados/historico
+        run: python coletor/coletar.py --saida dados/alertas.json --historico dados/historico --areas dados/areas-risco.geojson
 
-      - name: Guardar o histórico quando os alertas mudarem
+      - name: Guardar o histórico e a setorização quando mudarem
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add dados/historico
+          if [ -f dados/areas-risco.geojson ]; then git add dados/areas-risco.geojson; fi
           if git diff --cached --quiet; then
-            echo "Alertas sem mudança desde a última coleta."
+            echo "Alertas e setorização sem mudança desde a última coleta."
           else
-            git commit -m "dados: histórico de alertas $(date -u +%Y-%m-%dT%H:%MZ)"
+            git commit -m "dados: atualização automática $(date -u +%Y-%m-%dT%H:%MZ)"
             git pull --rebase --autostash || true
             git push || echo "Push do histórico falhou; a próxima coleta tenta de novo."
           fi

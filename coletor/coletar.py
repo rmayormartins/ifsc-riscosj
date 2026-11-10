@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RISCO.sj: coletor de alertas oficiais e pluviômetros.
+"""RISCO.sj: coletor de alertas oficiais, pluviômetros, rios e áreas de risco.
 
 Ramon Mayor Martins, IFSC Câmpus São José, Área de Telecomunicações.
 
@@ -17,6 +17,9 @@ Fontes
                 serviço público antigo)
   SDC/SC site   Feed RSS da categoria Alerta do site da SDC/SC (desligado por
                 padrão; ligue com RISCO_SDC_SITE=1 depois de confirmar com a SDC/SC)
+  SGB           Setorização de risco (setores de risco alto e muito alto) dos
+                municípios da região, gravada em dados/areas-risco.geojson; consulta
+                semanal, desligue com RISCO_SGB=0 ou force com RISCO_SGB=forcar
 
 Cada alerta recebe uma classe: chuva (entra no índice), costeiro (ressaca e
 ventos costeiros, que agravam alagamentos junto com chuva e maré alta) ou
@@ -44,7 +47,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-VERSAO = '1.3.4'
+VERSAO = '1.4.0'
 TZ_BR = timezone(timedelta(hours=-3))
 UA = 'RISCO.sj/1.0 (IFSC Campus Sao Jose; painel de apoio a decisao; https://rmayormartins.github.io)'
 
@@ -73,6 +76,7 @@ URLS_CEMADEN = [
 URL_SDC_FEED = 'https://www.defesacivil.sc.gov.br/categoria/alerta/feed/'
 URL_ANA_WS = 'https://www.ana.gov.br/hidrowebservice/EstacoesTelemetricas'
 URL_ANA_ANTIGA = 'https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos'
+URL_SGB_SETORES = 'https://geoportal.sgb.gov.br/server/rest/services/gestaoterritorial/risco/MapServer/0/query'
 
 # Estações fluviométricas telemétricas com dados no Hidro-WebService da ANA. A 84140000 fica no
 # rio Maruim, em São José (CGH Pingo de Ouro, jusante, operada pela Imaruí), com leitura a cada
@@ -965,6 +969,70 @@ def coletar_sdc_site(momento):
     return saida, '%d publicações vigentes para a região' % len(saida)
 
 
+# ---------------------------------------------------------------- setorização do SGB
+CAMPOS_SGB = ('munic', 'cd_geocmu', 'num_setor', 'local', 'tipolo_g1', 'tipolo_e1', 'tipolo_g2', 'tipolo_e2',
+              'grau_risco', 'num_edif', 'num_pess', 'data_setor')
+
+
+def data_sgb(v):
+    if isinstance(v, (int, float)):
+        return datetime.fromtimestamp(v / 1000, tz=timezone.utc).strftime('%Y-%m-%d')
+    return str(v or '')[:10]
+
+
+def ler_setorizacao(arquivo):
+    try:
+        with open(arquivo, encoding='utf-8') as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) and isinstance(d.get('features'), list) else None
+    except (OSError, ValueError):
+        return None
+
+
+def coletar_setorizacao(arquivo, momento, forcar=False):
+    """Setores de risco alto e muito alto do SGB nos municípios da região, em GeoJSON WGS 84.
+
+    Consulta o serviço quando o arquivo não existe, quando a lista de municípios muda,
+    às segundas-feiras entre 6 h e 7 h (horário de Brasília) ou quando forçado. Grava só se algo mudou."""
+    atual = ler_setorizacao(arquivo)
+    ibges = sorted(m['ibge'] for m in MUNICIPIOS)
+    semana = momento.weekday() == 0 and momento.hour == 6
+    if atual and atual.get('municipios') == ibges and not (forcar or semana):
+        return len(atual['features']), '%d setores (atualizado em %s); verificação semanal às segundas' % (
+            len(atual['features']), str(atual.get('atualizado_em', ''))[:10])
+    params = {'where': 'cd_geocmu IN (%s)' % ','.join("'%s'" % c for c in ibges),
+              'outFields': ','.join(CAMPOS_SGB), 'outSR': '4326', 'geometryPrecision': '6',
+              'maxAllowableOffset': '0.00003', 'f': 'geojson'}
+    d = json.loads(baixar(URL_SGB_SETORES + '?' + urllib.parse.urlencode(params), timeout=90).decode('utf-8'))
+    if not isinstance(d, dict) or d.get('error'):
+        raise ValueError('resposta inesperada do SGB: %s' % str((d or {}).get('error', d))[:200])
+    feats = []
+    for f in d.get('features') or []:
+        g = f.get('geometry') or {}
+        if g.get('type') not in ('Polygon', 'MultiPolygon'):
+            continue
+        p = {k: v for k, v in (f.get('properties') or {}).items() if k in CAMPOS_SGB and v not in (None, '', ' ')}
+        if 'data_setor' in p:
+            p['data_setor'] = data_sgb(p['data_setor'])
+        feats.append({'type': 'Feature', 'properties': p, 'geometry': g})
+    if not feats:
+        raise ValueError('o SGB não devolveu setores para os municípios %s' % ', '.join(ibges))
+    feats.sort(key=lambda f: (f['properties'].get('cd_geocmu', ''), f['properties'].get('num_setor', ''), json.dumps(f['geometry'])[:80]))
+    por_mun = {}
+    for f in feats:
+        por_mun[f['properties'].get('munic', '?')] = por_mun.get(f['properties'].get('munic', '?'), 0) + 1
+    resumo = ', '.join('%s %d' % kv for kv in sorted(por_mun.items()))
+    if atual and atual.get('municipios') == ibges and atual.get('features') == feats:
+        return len(feats), '%d setores, sem mudança no SGB (%s)' % (len(feats), resumo)
+    saida = {'type': 'FeatureCollection',
+             'fonte': 'Serviço Geológico do Brasil (SGB), Setorização de Risco, setores de risco alto e muito alto',
+             'url': URL_SGB_SETORES, 'municipios': ibges, 'atualizado_em': iso(momento), 'features': feats}
+    os.makedirs(os.path.dirname(os.path.abspath(arquivo)), exist_ok=True)
+    with open(arquivo, 'w', encoding='utf-8') as f:
+        json.dump(saida, f, ensure_ascii=False, separators=(',', ':'))
+    return len(feats), '%d setores gravados em %s (%s)' % (len(feats), os.path.basename(arquivo), resumo)
+
+
 # ---------------------------------------------------------------- principal
 def executar(nome, func, *args):
     t0 = time.time()
@@ -1016,6 +1084,7 @@ def principal():
     ap.add_argument('--offline', help='pasta com mapa.json (url -> arquivo) para testes sem rede')
     ap.add_argument('--sdc-site', action='store_true', help='inclui o feed do site da SDC/SC')
     ap.add_argument('--agora', help='instante de referência ISO para os acumulados (testes com dados antigos)')
+    ap.add_argument('--areas', help='arquivo GeoJSON da setorização do SGB (padrão: areas-risco.geojson ao lado da saída)')
     args = ap.parse_args()
 
     base = os.path.dirname(os.path.abspath(__file__))
@@ -1084,6 +1153,15 @@ def principal():
             dados['defesa_civil'].extend(res[0])
     else:
         dados['fontes']['sdc_site'] = {'ok': None, 'msg': 'desativado (ligue com RISCO_SDC_SITE=1)'}
+
+    modo_sgb = (os.environ.get('RISCO_SGB') or '').strip().lower()
+    if modo_sgb == '0':
+        dados['fontes']['sgb_setorizacao'] = {'ok': None, 'msg': 'desativado (RISCO_SGB=0)'}
+    else:
+        arq_areas = args.areas or os.path.join(os.path.dirname(os.path.abspath(args.saida)), 'areas-risco.geojson')
+        res, st = executar('Setorização (SGB)', coletar_setorizacao, arq_areas, momento, modo_sgb == 'forcar')
+        st['url'] = URL_SGB_SETORES
+        dados['fontes']['sgb_setorizacao'] = st
 
     dados['fontes']['cemaden_alertas'] = {'ok': None, 'msg': 'o CEMADEN não publica API de alertas; eles chegam à população pela Defesa Civil (IDAP)'}
 
