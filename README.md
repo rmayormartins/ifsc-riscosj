@@ -9,7 +9,7 @@ Author Ramon Mayor Martins, Ph.D. // [@rmayormartins](https://github.com/rmayorm
 Para cada turno de hoje e de amanhã (matutino, vespertino e noturno, incluindo o tempo de deslocamento antes das aulas), o painel:
 
 1. Lê os **alertas da Defesa Civil** publicados no IDAP, o mesmo canal que dispara o SMS 40199 e o Defesa Civil Alerta, com polígono e códigos IBGE.
-2. Lê os **avisos do INMET**, a **chuva medida nos pluviômetros do CEMADEN** e o **nível dos rios** nas estações telemétricas da ANA.
+2. Lê os **avisos do INMET**, a **chuva medida nos pluviômetros do CEMADEN** e o **nível do rio Maruim** na estação telemétrica da ANA.
 3. Classifica cada alerta: chuva (entra no índice), costeiro (ressaca e ventos costeiros, que agravam alagamentos) ou informativo (temperatura, umidade e afins, fora do índice).
 4. Busca a previsão horária (Open-Meteo) para os municípios de origem dos estudantes, o conjunto de modelos ICON, GFS e ECMWF para o câmpus e a **maré prevista** (Open-Meteo Marine).
 5. Cruza tudo com as áreas de risco (deslizamento e inundação).
@@ -101,7 +101,8 @@ Os formatos do IDAP, do INMET e do CEMADEN não têm documentação pública est
 - `fontes`: estado de cada fonte, com a mensagem de erro quando houver;
 - `diagnostico.idap`: os nomes de geocódigo e as severidades encontrados no feed;
 - `diagnostico.cemaden_chaves`: os campos do JSON dos pluviômetros;
-- `rios`: o nível de cada estação da ANA, quando as credenciais estiverem configuradas.
+- `rios`: o nível de cada estação da ANA, quando as credenciais estiverem configuradas;
+- `diagnostico.ana`: o resultado da autenticação e de cada consulta à ANA (sem token, senha nem identificador).
 
 Se uma fonte mudar de formato, o painel continua funcionando com as demais e com o ajuste manual.
 
@@ -113,11 +114,21 @@ Se uma fonte mudar de formato, o painel continua funcionando com as demais e com
 
 ## Nível dos rios (ANA)
 
-O coletor lê duas estações telemétricas da ANA na bacia do rio Cubatão do Sul, as mesmas que a Sala de Situação ANA/Epagri/Ciram acompanha: **84100000, Poço Fundo** (Santo Amaro da Imperatriz) e **84150100, ETA Casan montante** (Palhoça). Para os rios Maruim e Forquilhas, em São José, não foi localizada estação telemétrica pública.
+O coletor lê a estação telemétrica **84140000, CGH Pingo de Ouro (jusante)**, no **rio Maruim**, em São José, operada pela Imaruí e publicada no Hidro-WebService da ANA a cada 30 minutos (nível, vazão e chuva). Ela foi escolhida depois de um diagnóstico em 10/11/2026 com as estações telemétricas da Grande Florianópolis:
 
-Sem credenciais, o coletor tenta o serviço público antigo (Telemetria1WS), que a ANA vem desativando; se ele não responder, o painel mostra "sem credenciais da ANA" e segue sem os rios.
+- as estações do rio Cubatão do Sul acompanhadas pela Sala de Situação ANA/Epagri/Ciram (84100000 Poço Fundo, 84150100 ETA Casan montante e 84150050 Cubatão) e outras operadas pela Epagri ou pela Defesa Civil existem no inventário da ANA, mas não publicam a telemetria nessa API. Os dados delas estão no [Rios On-line](https://ciram.epagri.sc.gov.br/rios-online/) da Epagri/Ciram, que não tem API aberta; o caminho é pedir acesso à Epagri;
+- os pluviômetros do CEMADEN também aparecem no inventário sem dados, mas já chegam ao painel pelo próprio CEMADEN;
+- com dados na API estão principalmente estações de pequenas centrais hidrelétricas, quase todas fora das rotas dos estudantes. Na região, as mais próximas são a do rio Maruim e a 84180000, no rio Farias, em Antônio Carlos.
 
-O nível só entra no índice com **cotas de referência** (atenção, alerta e emergência, em cm na régua da estação). Peça os valores à Sala de Situação (sshidrosc@epagri.sc.gov.br) e informe em Configuração, Alagamento, maré e rios, ou no arquivo `coletor/rios.json`. Com cotas, um rio acima da cota funciona como alerta para os municípios da bacia no dia de hoje (atenção, flexibilizar ou suspender). Para incluir outras estações, crie `coletor/rios.json` com a lista (`codigo`, `nome`, `municipio`, `ibges`, `cotas`). Se os horários vierem em UTC, o coletor detecta e corrige; para forçar, defina `ANA_FUSO=utc`.
+Desde 2023 a ANA entrega esses dados pelo Hidro-WebService, que exige credenciais gratuitas:
+
+1. Envie e-mail para hidro@ana.gov.br com o assunto `[seu CPF] - Solicitação de acesso à API`, pedindo acesso ao Hidro-WebService para uso em painel institucional do IFSC.
+2. Com o identificador e a senha recebidos, crie em Settings, Secrets and variables, Actions, os secrets `ANA_IDENTIFICADOR` e `ANA_SENHA`.
+3. Rode o workflow. No log, a fonte `ana_rios` deve aparecer como ok.
+
+Detalhes do serviço confirmados no diagnóstico: o token vem no campo `tokenautenticacao` da resposta de `OAUth/v1` (há outro campo chamado `token`, que não serve) e vale 60 minutos; os parâmetros da série usam os rótulos do Swagger, com acento (`Código da Estação`, `Tipo Filtro Data`, `Data de Busca (yyyy-MM-dd)`, `Range Intervalo de busca`), e não os nomes do exemplo em Java do manual; com a data de hoje e `DIAS_2`, a resposta traz as 48 h até a leitura mais recente; o servidor alterna respostas 503 e 504, e o coletor tenta de novo nesses casos.
+
+O nível só entra no índice com **cotas de referência** (atenção, alerta e emergência, em cm na régua da estação). Informe em Configuração, Alagamento, maré e rios, ou no arquivo `coletor/rios.json`. Com cotas, o rio acima da cota funciona como alerta para São José e Palhoça no dia de hoje (atenção, flexibilizar ou suspender). Para incluir outras estações, crie `coletor/rios.json` com a lista (`codigo`, `nome`, `municipio`, `ibges`, `cotas`). Se os horários vierem em UTC, o coletor detecta e corrige; para forçar, defina `ANA_FUSO=utc`.
 
 ## Probabilidade de alagamento
 

@@ -560,7 +560,7 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
         <label class="campo">Acréscimo de maré por ressaca (m) <input type="text" data-cfg="alagamento.acrescimoRessaca" data-tipo="lista"><small>Nenhum, moderado, alto, severo ou mais</small></label>
         <label class="campo">Probabilidade por nível, rios <input type="text" data-cfg="probAlerta.rio" data-tipo="lista"><small>Normal, atenção, alerta, emergência</small></label>
       </div>
-      <p style="margin-top:14px">Cotas de referência dos rios, em cm, na régua da estação da ANA. Sem cotas, o painel mostra o nível e a variação, mas o rio não entra no índice. A Sala de Situação ANA/Epagri/Ciram informa as cotas de cada estação.</p>
+      <p style="margin-top:14px">Cotas de referência dos rios, em cm, na régua da estação. Sem cotas, o painel mostra o nível, a variação e a vazão, mas o rio não entra no índice. Para o rio Maruim, as cotas podem vir da Defesa Civil de São José, da Sala de Situação ANA/Epagri/Ciram ou do operador da estação.</p>
       <div class="rolagem"><table class="origens"><thead><tr><th>Estação</th><th>Atenção</th><th>Alerta</th><th>Emergência</th></tr></thead><tbody id="cotas-corpo"></tbody></table></div>
     </fieldset>
 
@@ -655,7 +655,7 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
         <li><b>CEMADEN</b>: chuva medida pelos pluviômetros automáticos (dados abertos). Ela substitui a estimativa do modelo nas horas que já passaram. As estações são associadas ao município pelo código (que começa com o código IBGE do município) e só entram janelas sem falhas de transmissão maiores que 2 h. Se a coleta automática falhar, um CSV baixado do Mapa Interativo pode ser importado no painel. O CEMADEN não publica API de alertas; seus alertas seguem para a Defesa Civil, que os divulga pelo IDAP. Um nível informado pela Direção pode ser lançado manualmente.</li>
         <li><b>Áreas de risco</b>: base inicial com posições aproximadas; a referência oficial é a setorização do SGB, que pode ser importada.</li>
         <li><b>Maré</b>: nível do mar previsto pelo Open-Meteo Marine, em metros em relação ao nível médio, no primeiro ponto com dados entre a Baía Norte e o mar aberto a leste da Ilha. Inclui a maré astronômica e o efeito da pressão atmosférica, mas não o empilhamento de água pelo vento (maré meteorológica), e tem precisão limitada perto da costa.</li>
-        <li><b>Rios</b>: nível nas estações telemétricas da ANA na bacia do rio Cubatão do Sul (Poço Fundo, em Santo Amaro da Imperatriz, e ETA Casan montante, em Palhoça), monitoradas pela Sala de Situação ANA/Epagri/Ciram. O coletor usa o Hidro-WebService da ANA, que exige credenciais gratuitas solicitadas em hidro@ana.gov.br.</li>
+        <li><b>Rios</b>: nível, vazão e variação em 24 h do rio Maruim na estação telemétrica 84140000 (CGH Pingo de Ouro, em São José), pelo Hidro-WebService da ANA, que exige credenciais gratuitas solicitadas em hidro@ana.gov.br. As estações do rio Cubatão do Sul (Poço Fundo e ETA Casan, da Epagri) não publicam a telemetria nessa API.</li>
         <li><b>Classe dos alertas</b>: cada alerta é classificado pelo evento e pelo título. Chuva, tempestade, alagamento, inundação, enxurrada, deslizamento, granizo e vendaval entram no índice como antes. Ressaca, maré e ventos costeiros (classe costeiro) não contam como alerta de chuva: pedem no máximo atenção e somam um acréscimo à maré no modelo de alagamento. Temperatura, umidade, geada, estiagem e afins (classe outro) são só informativos. Na dúvida, o alerta conta como chuva.</li>
       </ul>
       <h3>1. Índice ponderado (IRC)</h3>
@@ -710,7 +710,7 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
 'use strict';
 
 /* ================= constantes ================= */
-const VERSAO = '1.3';
+const VERSAO = '1.3.1';
 const TZ = 'America/Sao_Paulo';
 const CHAVE_CFG = 'riscosj.cfg.v1', CHAVE_LOG = 'riscosj.log.v1', CHAVE_AREAS = 'riscosj.areas.v1', CHAVE_MODELO = 'riscosj.modelo.v1';
 const DEMO = new URLSearchParams(location.search).has('demo');
@@ -743,8 +743,7 @@ const MODELO_REF = { versao: 1, tipo: 'logistica', calibrado: false, nome: 'Mode
 // Pontos de consulta da maré, do mais próximo ao mais seguro (mar aberto a leste da Ilha).
 const MARE_PONTOS = [[-27.50, -48.56], [-27.42, -48.52], [-27.86, -48.57], [-27.60, -48.35]];
 const RIOS_PADRAO = [
-  { codigo: '84100000', nome: 'Rio Cubatão do Sul em Poço Fundo', municipio: 'Santo Amaro da Imperatriz' },
-  { codigo: '84150100', nome: 'Rio Cubatão do Sul na ETA Casan (montante)', municipio: 'Palhoça' }
+  { codigo: '84140000', nome: 'Rio Maruim na CGH Pingo de Ouro (jusante)', municipio: 'São José' }
 ];
 
 const NIVEIS = [
@@ -1901,9 +1900,10 @@ function renderRios() {
       const varTxt = v24 === null || v24 === undefined ? '' : ', ' + (v24 >= 0 ? 'subiu ' : 'baixou ') + fmt(Math.abs(v24)) + ' cm em 24 h';
       const ct = cotasRio(r), cotaTxt = ct ? ct.map((v, i) => v ? RIO_NOMES[i + 1].toLowerCase() + ' ' + fmt(v) : '').filter(Boolean).join(', ') + ' cm' : '';
       const estTxt = e === null ? 'cotas de referência não configuradas' : (e === 0 ? 'abaixo das cotas' : 'acima da cota de ' + RIO_NOMES[e].toLowerCase()) + ' (' + cotaTxt + ')';
-      return '<li><div><b>' + esc(r.nome) + '</b> <small>(' + esc(r.municipio) + ', estação ' + esc(r.codigo) + ')</small><br>' + fmt(r.nivel_cm) + ' cm' + varTxt + '. ' +
+      const vz = r.vazao_m3s === null || r.vazao_m3s === undefined ? '' : ', vazão de ' + fmt(r.vazao_m3s, r.vazao_m3s < 10 ? 1 : 0) + ' m³/s';
+      return '<li><div><b>' + esc(r.nome) + '</b> <small>(' + esc(r.municipio) + ', estação ' + esc(r.codigo) + ')</small><br>' + fmt(r.nivel_cm) + ' cm' + varTxt + vz + '. ' +
         (e ? '<span class="sev s' + e + '">' + RIO_NOMES[e] + '</span> ' : '') + '<small>' + esc(estTxt) + (idade !== null ? '; leitura ' + idadeTxt(idade) : '') + (idade !== null && idade > 360 ? ', antiga demais para entrar no índice' : '') + '</small></div>' + sparkline(r.serie) + '</li>';
-    }).join('') + '</ul><p class="nota">Estações telemétricas da ANA na bacia do rio Cubatão do Sul, que afeta o deslocamento a partir de Palhoça e Santo Amaro da Imperatriz. Com cotas configuradas, o rio entra no índice como um alerta para esses municípios no dia de hoje. Para os rios Maruim e Forquilhas, em São José, não foi localizada estação telemétrica pública; novas estações podem ser incluídas em <code>coletor/rios.json</code>.</p>';
+    }).join('') + '</ul><p class="nota">Estação telemétrica do rio Maruim, na divisa entre São José e Palhoça, com dados da ANA (Hidro-WebService) a cada 30 minutos. Com cotas configuradas, o rio entra no índice como um alerta para esses municípios no dia de hoje. As estações do rio Cubatão do Sul (Poço Fundo e ETA Casan, operadas pela Epagri) não publicam a telemetria na API da ANA; os dados delas estão no Rios On-line da Epagri/Ciram. Outras estações podem ser incluídas em <code>coletor/rios.json</code>.</p>';
   } else if (st.estado === 'semcred') box.innerHTML = '<p class="nota">Nível dos rios indisponível: o coletor precisa das credenciais do Hidro-WebService da ANA (secrets <code>ANA_IDENTIFICADOR</code> e <code>ANA_SENHA</code> no GitHub). Enquanto isso, acompanhe o <a href="https://ciram.epagri.sc.gov.br/rios-online/" target="_blank" rel="noopener">Rios On-line da Epagri/Ciram</a>.</p>';
   else if (st.estado === 'erro') box.innerHTML = '<p class="nota erro">Nível dos rios indisponível (' + esc(st.erro || 'sem dados') + ').</p>';
   else box.innerHTML = '<p class="nota">Consultando.</p>';
