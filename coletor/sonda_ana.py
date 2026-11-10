@@ -8,13 +8,23 @@ ID, PW = os.environ.get('ANA_IDENTIFICADOR', '').strip(), os.environ.get('ANA_SE
 print('identificador: %d caracteres, só dígitos: %s | senha: %d caracteres' % (len(ID), ID.isdigit(), len(PW)))
 
 
-def req(url, h):
+def req1(url, h):
     r = urllib.request.Request(url, headers=dict({'User-Agent': UA, 'Accept': 'application/json'}, **h))
     try:
         with urllib.request.urlopen(r, timeout=60) as resp:
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as e:
         return e.code, dict(e.headers), e.read()
+
+
+def req(url, h):
+    for k in range(4):
+        st, hd, b = req1(url, h)
+        if st not in (502, 503, 504):
+            return st, hd, b
+        print('    (HTTP %d, nova tentativa em 10 s)' % st)
+        time.sleep(10)
+    return st, hd, b
 
 
 def txt(b):
@@ -86,22 +96,35 @@ def testar(nome, u, h):
     return st
 
 
-print('\n== 2. formas de enviar o token (série adotada, DIAS_2) ==')
-testar('Authorization: Bearer <token>', url, {'Authorization': 'Bearer ' + token})
-testar('Authorization: <token>', url, {'Authorization': token})
-testar('Authorization: bearer <token>', url, {'Authorization': 'bearer ' + token})
-testar('cabeçalho Token', url, {'Token': token})
-testar('cabeçalho tokenautenticacao', url, {'tokenautenticacao': token})
-print('\n== 3. parâmetros (com Bearer) ==')
 B = {'Authorization': 'Bearer ' + token}
-testar('sem DataDeBusca, DIAS_30 (manual)', BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode({k: v for k, v in dict(P, RangeIntervaloDeBusca='DIAS_30').items() if k != 'DataDeBusca'}), B)
-testar('DIAS_30 com data', BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode(dict(P, RangeIntervaloDeBusca='DIAS_30')), B)
-testar('HORA_24 com data', BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode(dict(P, RangeIntervaloDeBusca='HORA_24')), B)
-testar('rótulos do Swagger', BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode({'Código da Estação': '84100000', 'Tipo Filtro Data': 'DATA_LEITURA', 'Data de Busca (yyyy-MM-dd)': hoje, 'Range Intervalo de busca': 'DIAS_2'}), B)
-testar('série detalhada', BASE + '/HidroinfoanaSerieTelemetricaDetalhada/v1?' + urllib.parse.urlencode(P), B)
-testar('inventário da estação', BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode({'Código da Estação': '84100000'}), B)
-testar('inventário (CodigoDaEstacao)', BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode({'CodigoDaEstacao': '84100000'}), B)
-print('\n== 4. curl (como o Swagger) ==')
-for nome, h in [('curl Bearer', 'Authorization: Bearer ' + token), ('curl sem Bearer', 'Authorization: ' + token)]:
-    r = subprocess.run(['curl', '-sS', '-m', '60', '-o', '/tmp/c.json', '-w', '%{http_code}', '-H', 'accept: */*', '-H', h, url], capture_output=True, text=True)
-    print('%-38s HTTP %s  %s' % (nome, r.stdout, resumo(open('/tmp/c.json', 'rb').read(), 160) if os.path.exists('/tmp/c.json') else r.stderr[:160]))
+def dia(n):
+    return (datetime.now(timezone(timedelta(hours=-3))) + timedelta(days=n)).strftime('%Y-%m-%d')
+def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
+    q = {'Código da Estação': cod, 'Tipo Filtro Data': filtro, 'Data de Busca (yyyy-MM-dd)': data, 'Range Intervalo de busca': faixa}
+    st, hd, b = req(BASE + '/' + rota + '/v1?' + urllib.parse.urlencode(q), B)
+    if st != 200:
+        return 'HTTP %d %s' % (st, resumo(b, 120))
+    j = json.loads(txt(b)); it = j.get('items') or []
+    if not it:
+        return 'HTTP 200, 0 itens | message: %s' % j.get('message')
+    ds = sorted(str(x.get('Data_Hora_Medicao')) for x in it)
+    ex = it[-1]
+    return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
+
+print('\n== inventário ==')
+for cod in ['84100000', '84150100']:
+    st, hd, b = req(BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode({'Código da Estação': cod}), B)
+    it = (json.loads(txt(b)).get('items') or [{}])[0] if st == 200 else {}
+    print(cod, 'HTTP', st, {k: it.get(k) for k in ['Estacao_Nome', 'Municipio_Nome', 'Rio_Nome', 'Latitude', 'Longitude', 'Operando', 'Tipo_Estacao', 'Tipo_Estacao_Telemetrica', 'Data_Periodo_Telemetrica_Inicio', 'Data_Periodo_Telemetrica_Fim', 'Data_Ultima_Atualizacao', 'Operadora_Sigla', 'Responsavel_Sigla']})
+
+print('\n== série adotada, 84100000 ==')
+for data, faixa in [(dia(0), 'DIAS_2'), (dia(-1), 'DIAS_2'), (dia(1), 'DIAS_2'), (dia(0), 'HORA_24'), (dia(0), 'DIAS_7'), (dia(0), 'DIAS_30'), ('2026-10-15', 'DIAS_7')]:
+    print('%s %-8s %s' % (data, faixa, serie('HidroinfoanaSerieTelemetricaAdotada', '84100000', data, faixa)))
+print('filtro DATA_ULTIMA_ATUALIZACAO, hoje DIAS_2:', serie('HidroinfoanaSerieTelemetricaAdotada', '84100000', dia(0), 'DIAS_2', 'DATA_ULTIMA_ATUALIZACAO'))
+print('\n== série detalhada, 84100000 ==')
+for data, faixa in [(dia(0), 'DIAS_2'), (dia(-1), 'DIAS_2'), (dia(0), 'DIAS_7')]:
+    print('%s %-8s %s' % (data, faixa, serie('HidroinfoanaSerieTelemetricaDetalhada', '84100000', data, faixa)))
+print('\n== 84150100 ==')
+for rota in ['HidroinfoanaSerieTelemetricaAdotada', 'HidroinfoanaSerieTelemetricaDetalhada']:
+    for data, faixa in [(dia(0), 'DIAS_2'), (dia(0), 'DIAS_7')]:
+        print('%-10s %s %-8s %s' % (rota[-9:], data, faixa, serie(rota, '84150100', data, faixa)))
