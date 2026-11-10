@@ -44,7 +44,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-VERSAO = '1.3.3'
+VERSAO = '1.3.4'
 TZ_BR = timezone(timedelta(hours=-3))
 UA = 'RISCO.sj/1.0 (IFSC Campus Sao Jose; painel de apoio a decisao; https://rmayormartins.github.io)'
 
@@ -74,14 +74,14 @@ URL_SDC_FEED = 'https://www.defesacivil.sc.gov.br/categoria/alerta/feed/'
 URL_ANA_WS = 'https://www.ana.gov.br/hidrowebservice/EstacoesTelemetricas'
 URL_ANA_ANTIGA = 'https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos'
 
-# Estações fluviométricas telemétricas da ANA usadas pela Sala de Situação ANA/Epagri/Ciram
-# na bacia do rio Cubatão do Sul. Para trocar ou incluir estações (e informar as cotas de
-# atenção, alerta e emergência em cm), crie coletor/rios.json com a mesma estrutura.
+# Estações fluviométricas telemétricas com dados no Hidro-WebService da ANA. A 84140000 fica no
+# rio Maruim, em São José (CGH Pingo de Ouro, jusante, operada pela Imaruí), com leitura a cada
+# 30 min. As estações do rio Cubatão do Sul (84100000 Poço Fundo e 84150100 ETA Casan, da Epagri)
+# não publicam a telemetria nessa API (diagnóstico de 10/11/2026). Para trocar ou incluir estações
+# e informar as cotas de atenção, alerta e emergência em cm, crie coletor/rios.json.
 RIOS = [
-    {'codigo': '84100000', 'nome': 'Rio Cubatão do Sul em Poço Fundo', 'municipio': 'Santo Amaro da Imperatriz',
-     'ibges': ['4215703', '4211900'], 'cotas': None},
-    {'codigo': '84150100', 'nome': 'Rio Cubatão do Sul na ETA Casan (montante)', 'municipio': 'Palhoça',
-     'ibges': ['4211900'], 'cotas': None},
+    {'codigo': '84140000', 'nome': 'Rio Maruim na CGH Pingo de Ouro (jusante)', 'municipio': 'São José',
+     'ibges': ['4216602', '4211900'], 'lat': -27.5808, 'lon': -48.73, 'cotas': None},
 ]
 
 OFFLINE = None  # dict url -> caminho, usado nos testes
@@ -716,16 +716,10 @@ def data_ana(s):
 
 
 DIAG_ANA = []  # tentativas da última coleta, gravadas em diagnostico.ana (sem token, senha nem identificador)
-# Parâmetros conforme o exemplo em Java do manual do Hidro-WebService (versão 14/03/2025):
-# CodigoDaEstacao, TipoFiltroData e RangeIntervaloDeBusca; DataDeBusca no formato aaaa-mm-dd.
-# Os rótulos com acento ("Código da Estação") são só os nomes exibidos no Swagger.
-VARIANTES_ANA = [  # rota, intervalo de busca, envia DataDeBusca, cabeçalho Authorization
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_2', True, 'bearer'),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', True, 'bearer'),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_30', False, 'bearer'),
-    ('HidroinfoanaSerieTelemetricaAdotada', 'DIAS_2', True, 'puro'),
-    ('HidroinfoanaSerieTelemetricaDetalhada', 'DIAS_2', True, 'bearer'),
-]
+# Os nomes dos parâmetros são os rótulos do Swagger, com acento e espaço. O exemplo em Java do
+# manual (CodigoDaEstacao, RangeIntervaloDeBusca) responde 400. Com a data de hoje e DIAS_2, a
+# ANA devolve as 48 h até a leitura mais recente. Confirmado em 10/11/2026.
+ROTA_SERIE_ANA = 'HidroinfoanaSerieTelemetricaAdotada'
 
 
 def texto_ana(corpo):
@@ -735,8 +729,18 @@ def texto_ana(corpo):
         return corpo.decode('latin-1')
 
 
-def requisicao_ana(url, cabecalhos):
-    """GET que devolve (status, corpo) também nos erros HTTP, para registrar o que a ANA respondeu."""
+def requisicao_ana(url, cabecalhos, tentativas_5xx=3, espera=12):
+    """GET que devolve (status, corpo) também nos erros HTTP. O servidor da ANA alterna respostas
+    502, 503 e 504; nesses casos tenta de novo, com espera crescente."""
+    for k in range(tentativas_5xx):
+        st, corpo = requisicao_ana_1(url, cabecalhos)
+        if st not in (502, 503, 504):
+            return st, corpo
+        time.sleep(espera * (k + 1))
+    return st, corpo
+
+
+def requisicao_ana_1(url, cabecalhos):
     if OFFLINE is not None:
         try:
             return 200, baixar(url)
@@ -775,7 +779,7 @@ def ocultar(texto, segredos):
 
 
 def token_ana(ident, senha):
-    st, corpo = requisicao_ana(URL_ANA_WS + '/OAUth/v1', {'Identificador': ident, 'Senha': senha})
+    st, corpo = requisicao_ana(URL_ANA_WS + '/OAUth/v1', {'Identificador': ident, 'Senha': senha}, tentativas_5xx=4)
     texto = texto_ana(corpo)
     try:
         d = json.loads(texto)
@@ -822,62 +826,33 @@ def pontos_ana(d):
         kc = chave_com(it, ('cota',), ('status',)) or chave_com(it, ('nivel',), ('status',))
         ks = chave_com(it, ('cota', 'status'))
         kch = chave_com(it, ('chuva',), ('status',))
+        kv = chave_com(it, ('vazao',), ('status',))
         if not kd or not kc or str(it.get(ks) or '0').strip() == '2':  # 2 = dado ruim no controle de qualidade da ANA
             continue
         t, n = data_ana(it.get(kd)), num(it.get(kc))
         if t is not None and n is not None:
-            pontos.append((t, n, num(it.get(kch)) if kch else None))
+            pontos.append((t, n, num(it.get(kch)) if kch else None, num(it.get(kv)) if kv else None))
     return pontos
 
 
-def consulta_ana(codigo, ctx, rota, faixa, com_data, dia, auth='bearer'):
-    p = {'CodigoDaEstacao': codigo, 'TipoFiltroData': 'DATA_LEITURA'}
-    if com_data:
-        p['DataDeBusca'] = dia
-    p['RangeIntervaloDeBusca'] = faixa
-    aut = ctx['token'] if auth == 'puro' else 'Bearer ' + ctx['token']
-    st, corpo = requisicao_ana(URL_ANA_WS + '/' + rota + '/v1?' + urllib.parse.urlencode(p), {'Authorization': aut})
+def serie_ana_ws(codigo, ctx, momento):
+    """Série telemétrica adotada (cota em cm, chuva, vazão) das últimas 48 h pelo Hidro-WebService."""
+    p = {'Código da Estação': codigo, 'Tipo Filtro Data': 'DATA_LEITURA',
+         'Data de Busca (yyyy-MM-dd)': momento.astimezone(TZ_BR).strftime('%Y-%m-%d'), 'Range Intervalo de busca': 'DIAS_2'}
+    st, corpo = requisicao_ana(URL_ANA_WS + '/' + ROTA_SERIE_ANA + '/v1?' + urllib.parse.urlencode(p), {'Authorization': 'Bearer ' + ctx['token']})
     texto = texto_ana(corpo)
-    resumo, pontos = ocultar(texto, ctx['segredos']), None
+    resumo, pontos, msg = ocultar(texto, ctx['segredos']), None, ''
     if st == 200:
         try:
-            pontos = pontos_ana(json.loads(texto))
+            d = json.loads(texto)
+            pontos, msg = pontos_ana(d), str(d.get('message') or '') if isinstance(d, dict) else ''
         except ValueError:
             resumo = 'resposta sem JSON: ' + resumo
-    DIAG_ANA.append({'etapa': 'série', 'estacao': codigo, 'rota': rota, 'intervalo': faixa, 'data': dia if com_data else None,
-                     'autorizacao': 'Bearer' if auth == 'bearer' else 'token sem Bearer',
-                     'http': st, 'leituras': len(pontos) if pontos is not None else None, 'resposta': '' if pontos else resumo[:240]})
-    return st, pontos, resumo
-
-
-def serie_ana_ws(codigo, ctx, momento):
-    """Série telemétrica (cota em cm) recente pelo Hidro-WebService. Testa as variantes de rota e
-    intervalo até uma funcionar e reaproveita a vencedora nas demais estações. Como o manual não
-    diz se o intervalo conta para trás ou para frente da DataDeBusca, consulta também amanhã e
-    ontem quando a resposta não cobre as últimas horas ou as últimas 24 h, e junta as leituras."""
-    hoje = momento.astimezone(TZ_BR).date()
-    dia = lambda n: (hoje + timedelta(days=n)).strftime('%Y-%m-%d')
-    ordem = [ctx['variante']] if ctx.get('variante') else VARIANTES_ANA
-    ultimo, vazio = None, False
-    for rota, faixa, com_data, auth in ordem:
-        st, pontos, resumo = consulta_ana(codigo, ctx, rota, faixa, com_data, dia(0), auth)
-        if st == 200 and pontos is not None:
-            if com_data:
-                extra = []
-                if not pontos or max(q[0] for q in pontos) < momento - timedelta(hours=3):
-                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(1), auth)[1] or []
-                if pontos and min(q[0] for q in pontos) > momento - timedelta(hours=24):
-                    extra += consulta_ana(codigo, ctx, rota, faixa, True, dia(-1), auth)[1] or []
-                pontos = list({q[0]: q for q in pontos + extra}.values())
-            if pontos:
-                ctx['variante'] = (rota, faixa, com_data, auth)
-                return pontos
-            vazio, ultimo = True, 'HTTP 200 sem leituras em %s' % rota
-            continue
-        ultimo = 'HTTP %d: %s' % (st, resumo[:160] or 'sem corpo')
-    if vazio:
-        return []
-    raise RuntimeError(ultimo)
+    DIAG_ANA.append({'etapa': 'série', 'estacao': codigo, 'http': st, 'leituras': len(pontos) if pontos is not None else None,
+                     'resposta': '' if pontos else (msg or resumo)[:240]})
+    if pontos is None:
+        raise RuntimeError('HTTP %d: %s' % (st, resumo[:160] or 'sem corpo'))
+    return pontos
 
 
 def serie_ana_antiga(codigo, momento):
@@ -891,7 +866,7 @@ def serie_ana_antiga(codigo, momento):
         if 'datahora' in f and 'nivel' in f:
             t, n = data_ana(f['datahora']), num(f['nivel'])
             if t is not None and n is not None:
-                pontos.append((t, n, num(f.get('chuva'))))
+                pontos.append((t, n, num(f.get('chuva')), num(f.get('vazao'))))
     return pontos
 
 
@@ -900,18 +875,19 @@ def resumir_rio(cfg, pontos, momento):
         return None
     pontos.sort(key=lambda p: p[0])
     if pontos[-1][0] > momento + timedelta(minutes=30):  # horário em UTC lido como Brasília: corrige
-        pontos = [(t.replace(tzinfo=timezone.utc), n, c) for t, n, c in pontos]
+        pontos = [(p[0].replace(tzinfo=timezone.utc),) + tuple(p[1:]) for p in pontos]
     pontos = [p for p in pontos if p[0] <= momento + timedelta(minutes=30)]
     if not pontos:
         return None
-    t_ult, n_ult, _ = pontos[-1]
+    t_ult, n_ult = pontos[-1][0], pontos[-1][1]
+    vazoes = [p[3] for p in pontos if len(p) > 3 and p[3] is not None]
     antes = [p for p in pontos if p[0] <= t_ult - timedelta(hours=24)]
     janela = [p for p in pontos if p[0] > t_ult - timedelta(hours=24)]
-    chuvas = [c for _, _, c in janela if c is not None and c >= 0]
+    chuvas = [p[2] for p in janela if p[2] is not None and p[2] >= 0]
     horas = {}
-    for t, n, _ in pontos:
-        if t > t_ult - timedelta(hours=48):
-            horas[t.astimezone(TZ_BR).strftime('%Y-%m-%dT%H:00')] = n
+    for p in pontos:
+        if p[0] > t_ult - timedelta(hours=48):
+            horas[p[0].astimezone(TZ_BR).strftime('%Y-%m-%dT%H:00')] = p[1]
     cotas = cfg.get('cotas') or None
     estado = None
     if isinstance(cotas, dict):
@@ -925,7 +901,8 @@ def resumir_rio(cfg, pontos, momento):
         'ibges': cfg.get('ibges', []), 'lat': cfg.get('lat'), 'lon': cfg.get('lon'),
         'nivel_cm': round(n_ult, 1), 'quando': iso(t_ult),
         'variacao_24h_cm': round(n_ult - antes[-1][1], 1) if antes else None,
-        'max_24h_cm': round(max(n for _, n, _ in janela), 1),
+        'max_24h_cm': round(max(p[1] for p in janela), 1),
+        'vazao_m3s': round(vazoes[-1], 2) if vazoes else None,
         'chuva_24h_mm': round(sum(chuvas), 1) if chuvas else None,
         'cotas': cotas, 'estado': estado,
         'serie': sorted(horas.items()),
@@ -950,7 +927,7 @@ def coletar_rios(momento):
             erros.append('%s: %s' % (r['codigo'], str(e)[:120]))
     if not saida:
         raise RuntimeError(' | '.join(erros) or 'nenhuma estação configurada')
-    via = ('Hidro-WebService, ' + ctx['variante'][0].replace('HidroinfoanaSerieTelemetrica', 'série ').lower()) if token and ctx.get('variante') else 'Hidro-WebService' if token else 'serviço público antigo'
+    via = 'Hidro-WebService' if token else 'serviço público antigo'
     return saida, '%d de %d estações com leitura (%s)%s' % (len(saida), len(RIOS), via, ('; ' + ' | '.join(erros)) if erros else '')
 
 
