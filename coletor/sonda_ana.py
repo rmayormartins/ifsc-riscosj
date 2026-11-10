@@ -111,53 +111,37 @@ def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
     ex = it[-1]
     return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
 
-print('\n== controle: estação do exemplo do manual (15400000, Porto Velho) ==')
-print(serie('HidroinfoanaSerieTelemetricaAdotada', '15400000', dia(0), 'DIAS_2'))
+print('\n== 84140000, rio Maruim ==')
+st, hd, b = req(BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode({'Código da Estação': '84140000'}), B)
+it = (json.loads(txt(b)).get('items') or [{}])[0] if st == 200 else {}
+print({k: it.get(k) for k in ['Estacao_Nome', 'Municipio_Nome', 'Rio_Nome', 'Latitude', 'Longitude', 'Altitude', 'Area_Drenagem', 'Operadora_Sigla', 'Responsavel_Sigla', 'Data_Periodo_Telemetrica_Inicio']})
+q = {'Código da Estação': '84140000', 'Tipo Filtro Data': 'DATA_LEITURA', 'Data de Busca (yyyy-MM-dd)': dia(0), 'Range Intervalo de busca': 'DIAS_30'}
+st, hd, b = req(BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode(q), B)
+its = json.loads(txt(b)).get('items') or [] if st == 200 else []
+cotas = [float(x['Cota_Adotada']) for x in its if x.get('Cota_Adotada') not in (None, '')]
+print('30 dias: %d leituras, cota mín %.0f, máx %.0f cm | de %s a %s' % (len(its), min(cotas), max(cotas), min(x['Data_Hora_Medicao'] for x in its), max(x['Data_Hora_Medicao'] for x in its)) if cotas else 'sem cotas')
+for x in sorted(its, key=lambda x: x['Data_Hora_Medicao'])[-4:]:
+    print('   ', {k: x.get(k) for k in ['Data_Hora_Medicao', 'Cota_Adotada', 'Cota_Adotada_Status', 'Chuva_Adotada', 'Vazao_Adotada', 'Data_Atualizacao']})
+q['Data de Busca (yyyy-MM-dd)'] = dia(0); q['Range Intervalo de busca'] = 'DIAS_2'
+st, hd, b = req(BASE + '/HidroinfoanaSerieTelemetricaAdotada/v1?' + urllib.parse.urlencode(q), B)
+its2 = json.loads(txt(b)).get('items') or [] if st == 200 else []
+print('DIAS_2 a partir de hoje: %d leituras, de %s a %s' % (len(its2), min((x['Data_Hora_Medicao'] for x in its2), default='-'), max((x['Data_Hora_Medicao'] for x in its2), default='-')))
 
-print('\n== inventário de SC ==')
-lista = []
-for q in [{'Unidade Federativa': 'SC'}, {'UF': 'SC'}, {'Sigla UF': 'SC'}]:
-    st, hd, b = req(BASE + '/HidroInventarioEstacoes/v1?' + urllib.parse.urlencode(q), B)
-    print(list(q)[0], 'HTTP', st, resumo(b, 140) if st != 200 else 'itens: %d' % len(json.loads(txt(b)).get('items') or []))
-    if st == 200 and (json.loads(txt(b)).get('items') or []):
-        lista = json.loads(txt(b))['items']
-        break
-def f(v):
+print('\n== Rios On-line: endereços no main.js ==')
+for js in ['main.125be630afefcdb4.js']:
     try:
-        return float(str(v).replace(',', '.'))
-    except ValueError:
-        return None
-perto = []
-for e in lista:
-    la, lo = f(e.get('Latitude')), f(e.get('Longitude'))
-    if la is None or lo is None or not (-28.05 <= la <= -27.2 and -49.2 <= lo <= -48.3):
-        continue
-    if str(e.get('Tipo_Estacao_Telemetrica')) != '1' or str(e.get('Operando')) != '1':
-        continue
-    perto.append(e)
-flu = [e for e in perto if str(e.get('Tipo_Estacao')).lower().startswith('fluvio')]
-print('fluviométricas telemétricas operando na região:', len(flu))
-for e in flu:
-    print('  %s %-30s %-24s %-24s %s,%s op %s | %s' % (e.get('codigoestacao'), str(e.get('Estacao_Nome'))[:30], str(e.get('Municipio_Nome'))[:24], str(e.get('Rio_Nome'))[:24], e.get('Latitude'), e.get('Longitude'), e.get('Operadora_Sigla'),
-        serie('HidroinfoanaSerieTelemetricaAdotada', e.get('codigoestacao'), dia(0), 'DIAS_2')[:110]))
-print('\n== Rios On-line (Epagri/Ciram) ==')
-PADRAO = re.compile('["\'(]([^"\'()\\s]*(?:\\.json|\\.php|/api/|ajax|getJson|wp-json|dados|estac|nivel)[^"\'()\\s]*)["\')]', re.I)
-for u in ['https://ciram.epagri.sc.gov.br/rios-online/', 'https://ciram.epagri.sc.gov.br/index.php/rios-online/']:
-    try:
-        r = urllib.request.Request(u, headers={'User-Agent': UA, 'Accept': '*/*'})
-        with urllib.request.urlopen(r, timeout=40) as resp:
-            h = txt(resp.read())
-        tit = re.search(r'<title>(.*?)</title>', h, re.S | re.I)
-        print(u, 'HTTP 200,', len(h), 'bytes | título:', tit.group(1).strip()[:80] if tit else '')
-        for x in sorted(set(PADRAO.findall(h)))[:40]:
-            print('   ', x[:160])
-        for m in re.finditer(r'<iframe[^>]+src=["\']([^"\']+)', h, re.I):
-            print('    iframe:', m.group(1)[:160])
-        for m in re.finditer(r'<script[^>]+src=["\']([^"\']+)', h, re.I):
-            print('    script:', m.group(1)[:160])
-        break
+        r = urllib.request.Request('https://ciram.epagri.sc.gov.br/rios-online/' + js, headers={'User-Agent': UA})
+        with urllib.request.urlopen(r, timeout=60) as resp:
+            c = txt(resp.read())
+        print(js, len(c), 'bytes')
+        urls = sorted(set(re.findall(r'https?://[A-Za-z0-9._:/\-]+', c)))
+        for u in urls:
+            if not re.search(r'w3\.org|angular|googleapis|gstatic|github|mozilla|openstreetmap|arcgis|leaflet|mapbox|apple\.com|ietf', u):
+                print('   url:', u[:160])
+        for m in sorted(set(re.findall(r'["\'`](/[A-Za-z0-9_\-]*(?:api|estac|nivel|rio|boletim|dados|hidro|telem)[A-Za-z0-9_/\-\.]*)', c, re.I)))[:50]:
+            print('   rota:', m[:160])
     except Exception as e:  # noqa: BLE001
-        print(u, 'falhou:', str(e)[:120])
+        print(js, 'falhou:', str(e)[:120])
 raise SystemExit(0)
 
 print('\n== inventário ==')
