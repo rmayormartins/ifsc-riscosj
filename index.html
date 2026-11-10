@@ -566,10 +566,10 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
 
     <fieldset>
       <legend>Áreas de risco</legend>
-      <p>Para uso oficial, importe a setorização de áreas de risco do Serviço Geológico do Brasil (SGB) dos municípios da região, em GeoJSON (WGS 84) ou KML. O tipo (deslizamento ou inundação) e o grau (alto ou muito alto) são lidos dos atributos quando existirem.</p>
+      <p>As áreas vêm da setorização de risco do Serviço Geológico do Brasil (SGB), que o coletor baixa e confere toda semana para os municípios da região. Para usar outro mapeamento neste navegador (por exemplo, um levantamento mais recente da Defesa Civil), importe um arquivo GeoJSON (WGS 84) ou KML; o tipo (deslizamento ou inundação) e o grau (alto ou muito alto) são lidos dos atributos quando existirem.</p>
       <div class="acoes" style="margin-top:0">
         <label class="btn sec" style="display:inline-block">Importar GeoJSON ou KML<input type="file" id="arq-areas" accept=".geojson,.json,.kml" hidden></label>
-        <button type="button" class="btn sec" id="btn-areas-base">Voltar à base inicial</button>
+        <button type="button" class="btn sec" id="btn-areas-base">Descartar o arquivo importado</button>
       </div>
       <p class="nota" id="areas-info"></p>
     </fieldset>
@@ -653,7 +653,7 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
         <li><b>INMET</b>: avisos meteorológicos ativos. Critérios para chuva: amarelo (perigo potencial) de 20 a 30 mm/h ou até 50 mm/dia; laranja (perigo) de 30 a 60 mm/h ou de 50 a 100 mm/dia; vermelho (grande perigo) acima de 60 mm/h ou de 100 mm/dia.</li>
         <li><b>Defesa Civil</b>: alertas publicados no IDAP (Interface de Divulgação de Alertas Públicos) em formato CAP 1.2, o canal que dispara o SMS 40199 e o Defesa Civil Alerta. Cada alerta traz polígono e códigos IBGE. Os níveis seguem a Portaria MIDR nº 2.458/2026 (baixo, moderado, alto, severo e extremo); quando o alerta não informa o nível por extenso, ele é deduzido da severidade CAP.</li>
         <li><b>CEMADEN</b>: chuva medida pelos pluviômetros automáticos (dados abertos). Ela substitui a estimativa do modelo nas horas que já passaram. As estações são associadas ao município pelo código (que começa com o código IBGE do município) e só entram janelas sem falhas de transmissão maiores que 2 h. Se a coleta automática falhar, um CSV baixado do Mapa Interativo pode ser importado no painel. O CEMADEN não publica API de alertas; seus alertas seguem para a Defesa Civil, que os divulga pelo IDAP. Um nível informado pela Direção pode ser lançado manualmente.</li>
-        <li><b>Áreas de risco</b>: base inicial com posições aproximadas; a referência oficial é a setorização do SGB, que pode ser importada.</li>
+        <li><b>Áreas de risco</b>: setores de risco alto e muito alto da setorização do Serviço Geológico do Brasil (SGB) para os municípios de origem dos estudantes, baixados pelo coletor do serviço de mapas do Geoportal do SGB e conferidos toda semana. Cada setor tem tipologia (deslizamento, queda de blocos, erosão, inundação ou enxurrada), grau de risco e estimativa de pessoas expostas. Sem esse arquivo, o painel usa uma base inicial com posições aproximadas.</li>
         <li><b>Maré</b>: nível do mar previsto pelo Open-Meteo Marine, em metros em relação ao nível médio, no primeiro ponto com dados entre a Baía Norte e o mar aberto a leste da Ilha. Inclui a maré astronômica e o efeito da pressão atmosférica, mas não o empilhamento de água pelo vento (maré meteorológica), e tem precisão limitada perto da costa.</li>
         <li><b>Rios</b>: nível, vazão e variação em 24 h do rio Maruim na estação telemétrica 84140000 (CGH Pingo de Ouro, em São José), pelo Hidro-WebService da ANA, que exige credenciais gratuitas solicitadas em hidro@ana.gov.br. As estações do rio Cubatão do Sul (Poço Fundo e ETA Casan, da Epagri) não publicam a telemetria nessa API.</li>
         <li><b>Classe dos alertas</b>: cada alerta é classificado pelo evento e pelo título. Chuva, tempestade, alagamento, inundação, enxurrada, deslizamento, granizo e vendaval entram no índice como antes. Ressaca, maré e ventos costeiros (classe costeiro) não contam como alerta de chuva: pedem no máximo atenção e somam um acréscimo à maré no modelo de alagamento. Temperatura, umidade, geada, estiagem e afins (classe outro) são só informativos. Na dúvida, o alerta conta como chuva.</li>
@@ -686,7 +686,7 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
         <li>Murphy, A. H. (1977). The value of climatological, categorical and probabilistic forecasts in the cost-loss ratio situation. <i>Monthly Weather Review</i>, 105(7).</li>
         <li>Mamdani, E. H.; Assilian, S. (1975). An experiment in linguistic synthesis with a fuzzy logic controller. <i>International Journal of Man-Machine Studies</i>, 7(1).</li>
         <li>Brasil. Ministério da Integração e do Desenvolvimento Regional. Portaria MIDR nº 2.458, de 30 de julho de 2026 (Idap e Defesa Civil Alerta).</li>
-        <li>Serviço Geológico do Brasil. Setorização de áreas de risco geológico (repositório RIGEO).</li>
+        <li>Serviço Geológico do Brasil. Setorização de Risco (serviço de mapas do Geoportal do SGB) e relatórios de setorização de áreas de risco geológico (repositório RIGEO).</li>
         <li>Zippenfenig, P. Open-Meteo.com Weather API. Zenodo. doi:10.5281/zenodo.7970649.</li>
         <li>Hosmer, D. W.; Lemeshow, S.; Sturdivant, R. X. (2013). <i>Applied Logistic Regression</i>. 3. ed. Wiley.</li>
         <li>Brier, G. W. (1950). Verification of forecasts expressed in terms of probability. <i>Monthly Weather Review</i>, 78(1).</li>
@@ -710,7 +710,7 @@ table.fat-alag td.num{font-variant-numeric:tabular-nums}
 'use strict';
 
 /* ================= constantes ================= */
-const VERSAO = '1.3.1';
+const VERSAO = '1.4.0';
 const TZ = 'America/Sao_Paulo';
 const CHAVE_CFG = 'riscosj.cfg.v1', CHAVE_LOG = 'riscosj.log.v1', CHAVE_AREAS = 'riscosj.areas.v1', CHAVE_MODELO = 'riscosj.modelo.v1';
 const DEMO = new URLSearchParams(location.search).has('demo');
@@ -820,7 +820,7 @@ const S = {
   fcEstado: 'pendente', ensEstado: 'pendente', fcErro: '', ensErro: '',
   inmet: { estado: 'pendente', avisos: [] }, dc: { estado: 'pendente', alertas: [] }, pluv: { estado: 'pendente', estacoes: [] }, coletor: null,
   mare: null, mareEstado: 'pendente', mareErro: '', rios: { estado: 'pendente', estacoes: [] }, modelo: MODELO_REF, modeloFonte: 'padrão do painel', cotasCodigos: '',
-  areas: [], areasFonte: 'base',
+  areas: [], areasFonte: 'base', areasSGB: null,
   janelas: [], R: {}, sel: null,
   sim: { on: false, ant: 80, acc: 60, int: 35, gust: 70, pens: 50, dc: 3, inmet: 2, mar: 0.3 },
   mapa: null, camadas: {}, atualizado: null, origemGrafico: 0, carregando: false
@@ -919,11 +919,27 @@ function origemMaisProxima(lat, lon) {
   S.cfg.origens.forEach((o, i) => { const d = distKm(lat, lon, +o.lat, +o.lon); if (d < bd) { bd = d; best = i; } });
   return best;
 }
-function prepararAreas(lista) { return lista.map(a => Object.assign({}, a, { oi: origemMaisProxima(a.lat, a.lon) })); }
+function prepararAreas(lista) {
+  return lista.map(a => {
+    const k = a.mun ? S.cfg.origens.findIndex(o => norm(o.nome) === norm(a.mun)) : -1;
+    return Object.assign({}, a, k >= 0 ? { oi: k, mun: S.cfg.origens[k].nome } : { oi: origemMaisProxima(a.lat, a.lon) });
+  });
+}
+/* prioridade: arquivo importado neste navegador, setorização do SGB baixada pelo coletor, base inicial */
 function carregarAreas() {
   let lista = null, fonte = 'base';
   try { const s = JSON.parse(localStorage.getItem(CHAVE_AREAS) || 'null'); if (s && Array.isArray(s.areas) && s.areas.length) { lista = s.areas; fonte = s.fonte || 'importada'; } } catch (e) {}
+  if (!lista && S.areasSGB) { lista = S.areasSGB.lista; fonte = 'sgb'; }
   S.areas = prepararAreas(lista || AREAS_BASE); S.areasFonte = lista ? fonte : 'base';
+}
+async function carregarAreasSGB() {
+  try {
+    const gj = await buscarJSON('dados/areas-risco.geojson?d=' + new Date().toISOString().slice(0, 13), 15000);
+    const lista = areasDeGeoJSON(gj, true);
+    if (!lista.length) return;
+    S.areasSGB = { lista, em: gj.atualizado_em || '' };
+    if (S.areasFonte === 'base' || S.areasFonte === 'sgb') carregarAreas();
+  } catch (e) {}
 }
 function centroide(g) {
   if (!g || !g.coordinates) return null;
@@ -935,17 +951,25 @@ function centroide(g) {
 }
 function classificar(texto) {
   const t = norm(texto);
-  return { tipo: /inund|alag|enchent|enxurr|hidrol/.test(t) ? 'inund' : 'desl', grau: /muito alto|\br4\b|ma\b/.test(t) ? 'muito alto' : 'alto' };
+  return { tipo: /inund|alag|enchent|enxurr|hidrol|solapament|margem fluvial/.test(t) ? 'inund' : 'desl', grau: /muito alto|\br4\b|\bma\b/.test(t) ? 'muito alto' : 'alto' };
 }
-function areasDeGeoJSON(gj) {
-  const fs = gj.type === 'FeatureCollection' ? gj.features : gj.type === 'Feature' ? [gj] : [];
+/* GeoJSON da setorização do SGB (campos munic, local, num_setor, tipolo_g1, grau_risco...) ou de outra fonte */
+function areasDeGeoJSON(gj, sgb) {
+  const fs = gj && gj.type === 'FeatureCollection' ? gj.features || [] : gj && gj.type === 'Feature' ? [gj] : [];
   return fs.map((f, i) => {
     const c = centroide(f.geometry); if (!c) return null;
-    const p = f.properties || {};
-    const cl = classificar(Object.values(p).join(' '));
-    const nome = p.NOME || p.nome || p.Name || p.name || p.LOCAL || p.local || p.BAIRRO || p.bairro || p.SETOR || p.setor || ('Setor ' + (i + 1));
-    const mun = p.MUNICIPIO || p.municipio || p.Municipio || '';
-    return { nome: String(nome), mun: String(mun), tipo: cl.tipo, grau: cl.grau, lat: c[1], lon: c[0], fonte: 'Arquivo importado', geom: f.geometry };
+    const p = f.properties || {}, P = {};
+    Object.keys(p).forEach(k => { P[k.toLowerCase()] = p[k]; });
+    const pega = (...ns) => { for (const n of ns) { const v = P[n]; if (v !== undefined && v !== null && String(v).trim()) return String(v).trim(); } return ''; };
+    const tudo = Object.values(p).join(' ');
+    const tipoTxt = [pega('tipolo_g1', 'tipologia', 'tipo', 'processo'), pega('tipolo_e1')].join(' ').trim();
+    const grauTxt = pega('grau_risco', 'grau', 'risco');
+    const setor = pega('num_setor', 'setor', 'id_setor', 'cod_setor');
+    const nome = pega('nome', 'name', 'local', 'localidade', 'bairro') || setor || ('Setor ' + (i + 1));
+    const ano = pega('data_setor', 'data').slice(0, 4), pess = pega('num_pess', 'pessoas');
+    const fonte = (sgb ? 'Setorização do SGB' : 'Arquivo importado') + (setor ? ', ' + setor : '') + (/^\d{4}$/.test(ano) ? ', ' + ano : '') + (pess ? '; cerca de ' + pess + ' pessoas no setor' : '');
+    const tipologia = pega('tipolo_e1') || pega('tipolo_g1', 'tipologia');
+    return { nome, mun: pega('munic', 'municipio', 'nm_mun', 'cidade'), tipologia, tipo: classificar(tipoTxt || tudo).tipo, grau: classificar(grauTxt || tudo).grau, lat: c[1], lon: c[0], fonte, geom: f.geometry };
   }).filter(Boolean);
 }
 function areasDeKML(txt) {
@@ -1625,6 +1649,7 @@ function renderFontes() {
     ['Pluviômetros'].concat(S.pluv.estado === 'manual' ? ['man', conta(S.pluv.estacoes.length, 'estação', 'estações') + ' de arquivo'] : est(S.pluv.estado, conta(S.pluv.estacoes.length, 'estação', 'estações'), 'indisponíveis')),
     ['Maré'].concat(est(S.mareEstado, 'ok', 'indisponível')),
     ['Rios'].concat(S.rios.estado === 'semcred' ? ['', 'sem credenciais da ANA'] : est(S.rios.estado, conta(S.rios.estacoes.length, 'estação', 'estações'), 'indisponível')),
+    ['Áreas de risco'].concat(S.areasFonte === 'sgb' ? ['ok', conta(S.areas.length, 'setor', 'setores') + ' do SGB'] : S.areasFonte === 'base' ? ['', 'base inicial'] : ['man', conta(S.areas.length, 'área', 'áreas') + ' de arquivo']),
     ['Coletor'].concat(DEMO ? ['man', 'sintético'] : !col ? ['', 'consultando'] : col.estado === 'ok' ? [col.idade > IDADE_AVISO_COLETOR ? 'erro' : 'ok', (col.idade > IDADE_AVISO_COLETOR ? 'desatualizado, ' : '') + idadeTxt(col.idade)] : ['erro', 'não encontrado'])
   ];
   $('#fontes').innerHTML = itens.map(i => '<span class="fonte ' + i[1] + '"' + (i[0] === 'Coletor' && col && col.erro ? ' title="' + esc(col.erro) + '"' : '') + '>' + i[0] + ': ' + esc(i[2]) + '</span>').join('');
@@ -1647,6 +1672,7 @@ function iniciarMapa() {
   S.camadas.base = camadaBase().addTo(m);
   S.camadas.oficiais = L.layerGroup().addTo(m);
   S.camadas.areas = L.layerGroup().addTo(m);
+  S.camadas.areasPts = L.layerGroup();
   S.camadas.pluv = L.layerGroup().addTo(m);
   S.camadas.origens = L.layerGroup().addTo(m);
   S.camadas.campus = L.layerGroup().addTo(m);
@@ -1662,6 +1688,8 @@ function iniciarMapa() {
     return d;
   };
   leg.addTo(m);
+  const pontosSetores = () => { if (m.getZoom() < 14) S.camadas.areasPts.addTo(m); else m.removeLayer(S.camadas.areasPts); };
+  m.on('zoomend', pontosSetores); pontosSetores();
   m.on('click', () => m.scrollWheelZoom.enable());
   m.on('mouseout', () => m.scrollWheelZoom.disable());
   S.mapa = m;
@@ -1676,7 +1704,7 @@ function iconeArea(tipo, cor) {
 function renderMapa(R) {
   if (!S.mapa) return;
   const ok = temDados();
-  S.camadas.areas.clearLayers(); S.camadas.origens.clearLayers(); S.camadas.campus.clearLayers(); S.camadas.oficiais.clearLayers(); S.camadas.pluv.clearLayers();
+  S.camadas.areas.clearLayers(); S.camadas.areasPts.clearLayers(); S.camadas.origens.clearLayers(); S.camadas.campus.clearLayers(); S.camadas.oficiais.clearLayers(); S.camadas.pluv.clearLayers();
   const m = S.cfg.manual;
   const oficiais = (+m.dc >= 0 ? [] : S.dc.alertas).concat(+m.inmet >= 0 ? [] : S.inmet.avisos);
   oficiais.forEach(a => {
@@ -1696,10 +1724,11 @@ function renderMapa(R) {
   });
   R.areas.forEach(x => {
     const a = x.a, cor = ok ? corArea(x.at) : '#939598';
-    const pop = '<b>' + esc(a.nome) + '</b><br>' + (a.mun ? esc(a.mun) + '<br>' : '') + (a.tipo === 'inund' ? 'Inundação' : 'Deslizamento') + ', risco ' + esc(a.grau) +
+    const pop = '<b>' + esc(a.nome) + '</b><br>' + (a.mun ? esc(a.mun) + '<br>' : '') + (a.tipologia ? esc(a.tipologia) : a.tipo === 'inund' ? 'Inundação' : 'Deslizamento') + ', risco ' + esc(a.grau) +
       (ok ? '<br>Ativação no turno: ' + fmt(100 * x.at) + ' de 100' : '') + '<br><small>' + esc(a.fonte || '') + '</small>';
     if (a.geom && a.geom.type && a.geom.type !== 'Point') {
       L.geoJSON(a.geom, { style: { color: '#000', weight: 1, fillColor: cor, fillOpacity: 0.55 } }).bindPopup(pop).addTo(S.camadas.areas);
+      L.marker([a.lat, a.lon], { icon: iconeArea(a.tipo, cor), keyboard: false, title: a.nome }).bindPopup(pop).addTo(S.camadas.areasPts);
     } else {
       L.marker([a.lat, a.lon], { icon: iconeArea(a.tipo, cor), keyboard: true, title: a.nome }).bindPopup(pop).addTo(S.camadas.areas);
     }
@@ -1715,9 +1744,12 @@ function renderMapa(R) {
   const ic = L.divIcon({ className: '', html: '<div class="mk-campus"></div><span class="mk-rot">IFSC SJ</span>', iconSize: [18, 18], iconAnchor: [9, 9] });
   L.marker([c.lat, c.lon], { icon: ic, title: c.nome, zIndexOffset: 1000 }).bindPopup('<b>' + esc(c.nome) + '</b><br>Rua José Lino Kretzer, 608, Praia Comprida' +
     (ok ? '<br>Chuva máx. na janela: ' + fmt(r0.x.int, 1) + ' mm/h<br>Acumulado na janela: ' + fmt(r0.x.acc) + ' mm<br>Perigo local: ' + fmt(100 * r0.H) + ' de 100' : '')).addTo(S.camadas.campus);
+  const em = S.areasSGB && S.areasSGB.em ? String(S.areasSGB.em).slice(0, 10).split('-').reverse().join('/') : '';
   const info = S.areasFonte === 'base'
-    ? 'Base inicial com ' + S.areas.length + ' áreas em posições aproximadas, a partir de pontos citados pela Defesa Civil de São José e de estudo da bacia do rio Forquilhas. Também citadas, ainda sem posição no mapa: ' + juntar(AREAS_SEM_POSICAO) + '. Para uso oficial, importe a setorização do SGB em Configuração.'
-    : S.areas.length + ' áreas carregadas de arquivo importado.';
+    ? 'Base inicial com ' + S.areas.length + ' áreas em posições aproximadas, a partir de pontos citados pela Defesa Civil de São José e de estudo da bacia do rio Forquilhas. Também citadas, ainda sem posição no mapa: ' + juntar(AREAS_SEM_POSICAO) + '. Ela só é usada enquanto a setorização do SGB não estiver disponível no site.'
+    : S.areasFonte === 'sgb'
+      ? S.areas.length + (S.areas.length === 1 ? ' setor' : ' setores') + ' de risco alto e muito alto da setorização do Serviço Geológico do Brasil (SGB) nos municípios da região' + (em ? ', baixados pelo coletor em ' + em : '') + '. Com o mapa afastado, cada setor aparece como um ícone; aproxime para ver o polígono.'
+      : S.areas.length + (S.areas.length === 1 ? ' área' : ' áreas') + ' do arquivo ' + S.areasFonte + ', importado neste navegador. Para voltar à setorização do SGB, use Descartar o arquivo importado em Configuração.';
   $('#nota-areas').textContent = info; $('#areas-info').textContent = info;
 }
 
@@ -2487,6 +2519,7 @@ function aplicarDemo() {
 async function carregar() {
   if (S.carregando) return;
   S.carregando = true; $('#btn-atualizar').disabled = true; renderFontes();
+  const pAreas = S.areasSGB ? null : carregarAreasSGB();
   if (DEMO) { aplicarDemo(); await carregarModelo(); }
   else {
     if (S.fcEstado !== 'ok') S.fcEstado = 'carregando';
@@ -2516,6 +2549,7 @@ async function carregar() {
     if (!(f.inmet && f.inmet.ok)) tarefas.push(buscarINMET().then(av => { S.inmet = { estado: 'ok', avisos: av }; }).catch(e => { S.inmet = { estado: 'erro', avisos: [], erro: e.message }; }));
     await Promise.allSettled(tarefas);
   }
+  if (pAreas) await pAreas;
   S.carregando = false; S.atualizado = agoraLocal(); $('#btn-atualizar').disabled = false;
   montarCotas(); renderModeloAtual();
   recalcular();
