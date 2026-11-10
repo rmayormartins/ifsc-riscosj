@@ -111,16 +111,33 @@ def serie(rota, cod, data, faixa, filtro='DATA_LEITURA'):
     ex = it[-1]
     return 'HTTP 200, %d itens, de %s a %s | exemplo: %s' % (len(it), ds[0], ds[-1], {k: ex[k] for k in list(ex)[:12]})
 
-print('\n== Rios On-line: strings candidatas a rota ==')
+print('\n== Rios On-line: usos das constantes de base ==')
 r = urllib.request.Request('https://ciram.epagri.sc.gov.br/rios-online/main.125be630afefcdb4.js', headers={'User-Agent': UA})
 with urllib.request.urlopen(r, timeout=60) as resp:
     c = txt(resp.read())
-todas = set(re.findall(r"'([^'\\\n]{2,60})'", c)) | set(re.findall(r'"([^"\\\n]{2,60})"', c))
-pal = re.compile(r'^(get|lista|listar|busca|buscar|obter|consulta|consultar|ultima|ultimas|carrega|carregar|retorna|dados|estac|hidro|boletim|monitor|serie|nivel|bacia|cota|telemetr|situac|mapa|grafic)', re.I)
-cand = sorted(x for x in todas if ('/' in x and len(x) < 50 and not re.search(r'[<>{}()\s;=]|^https?:|\.(js|css|png|svg|jpg)$', x)) or (pal.match(x) and re.fullmatch(r'[A-Za-z0-9_/\-]+', x)))
-print(len(todas), 'strings;', len(cand), 'candidatas')
-for x in cand[:200]:
-    print('  ', x)
+m = re.search(r"const (_0x[0-9a-f]+)='/api/rios-online-server/webresources/monitoramentohidrologia/',(_0x[0-9a-f]+)='/api/rios-online-server/'", c)
+A, Bb = m.group(1), m.group(2)
+print('constantes:', A, Bb)
+for nome in (A, Bb):
+    for k, mm in enumerate(re.finditer(re.escape(nome) + r'(?![0-9a-f])', c)):
+        if k == 0:
+            continue
+        print('  [%s] ...%s...' % (nome, c[max(0, mm.start() - 140): mm.end() + 200].replace('\n', ' ')))
+        if k > 14:
+            break
+print('\n== tentativas diretas ==')
+def get(u):
+    try:
+        rq = urllib.request.Request(u, headers={'User-Agent': UA, 'Accept': 'application/json, text/plain, */*'})
+        with urllib.request.urlopen(rq, timeout=40) as resp:
+            return resp.status, resp.headers.get('Content-Type'), resp.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers.get('Content-Type'), e.read()
+    except Exception as e:  # noqa: BLE001
+        return 0, '', str(e).encode()
+for u in ['https://ciram.epagri.sc.gov.br/api/rios-online-server/cache/bacias.txt', 'https://ciram.epagri.sc.gov.br/rios-online/cache/bacias.txt']:
+    st, ct, b = get(u)
+    print(u, 'HTTP', st, ct, len(b), 'bytes |', resumo(b, 500))
 raise SystemExit(0)
 
 print('\n== inventário ==')
